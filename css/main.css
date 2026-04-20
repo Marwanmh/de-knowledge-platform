@@ -2719,3 +2719,164 @@ mark {
   overflow-x: auto;
   margin: 0;
 }
+
+/* ===================================================
+   MOBILE RESPONSIVE (≤ 768px)
+   =================================================== */
+
+/* Hamburger button — hidden on desktop */
+.mobile-menu-btn {
+  display: none;
+  position: fixed;
+  top: 14px; left: 14px;
+  z-index: 300;
+  background: rgba(13,13,43,0.95);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  width: 42px; height: 42px;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-direction: column;
+  gap: 5px;
+  backdrop-filter: blur(12px);
+}
+.mobile-menu-btn span {
+  display: block;
+  width: 20px; height: 2px;
+  background: var(--text);
+  border-radius: 2px;
+  transition: transform 0.25s, opacity 0.25s;
+}
+.mobile-menu-btn.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.mobile-menu-btn.open span:nth-child(2) { opacity: 0; }
+.mobile-menu-btn.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+/* Sidebar overlay backdrop */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 150;
+  backdrop-filter: blur(2px);
+}
+.sidebar-overlay.visible { display: block; }
+
+@media (max-width: 768px) {
+
+  /* Show hamburger */
+  .mobile-menu-btn { display: flex; }
+
+  /* Sidebar: slide off-screen left, slide in when .open */
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 200;
+    width: 280px;
+  }
+  .sidebar.open { transform: translateX(0); }
+
+  /* Main: full width, reduced padding, add top space for hamburger */
+  .main {
+    margin-left: 0;
+    padding: 72px 16px 40px;
+  }
+
+  /* Hero: compact */
+  .hero {
+    padding: 32px 20px 28px;
+  }
+  .hero h1 { font-size: 26px; }
+  .hero p  { font-size: 14px; }
+  .hero-eyebrow { font-size: 10px; }
+  .hero-stats { gap: 20px; margin-top: 24px; }
+  .hero-stat .stat-num { font-size: 22px; }
+  .hero-stat .stat-label { font-size: 11px; }
+
+  /* Page headers */
+  .page-header { margin-bottom: 24px; }
+  .page-header h1 { font-size: 24px; }
+  .page-header p  { font-size: 13px; }
+
+  /* Card grid: single column */
+  .card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Filter bar: scroll horizontally */
+  .filter-bar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 6px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .filter-btn { white-space: nowrap; flex-shrink: 0; }
+
+  /* Knowledge cards */
+  .knowledge-section { margin-bottom: 32px; }
+  .knowledge-card { padding: 18px 16px; }
+  .section-header { font-size: 13px; }
+
+  /* Gap cards */
+  .gap-card { padding: 18px 16px; }
+
+  /* Connection cards */
+  .connection-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Flashcard: full width */
+  .fc-card { width: 100%; max-width: 100%; height: 220px; }
+  .fc-front, .fc-back { padding: 20px 16px; font-size: 14px; }
+  .fc-grid { grid-template-columns: 1fr; }
+
+  /* Interview Q: compact */
+  .iq-answer { font-size: 13px; }
+
+  /* Code snippets */
+  .snippet-code { font-size: 11px; }
+
+  /* Readiness section */
+  .readiness-grid { grid-template-columns: 1fr !important; }
+  .readiness-score-circle { width: 100px; height: 100px; font-size: 28px; }
+
+  /* Roadmap */
+  .roadmap-phase { padding: 20px 16px; }
+  .roadmap-phase-header { gap: 10px; }
+  .roadmap-phase-emoji { font-size: 22px; }
+  .roadmap-phase-title { font-size: 15px; }
+  .roadmap-phase-meta { flex-direction: column; gap: 6px; align-items: flex-start; }
+  .roadmap-topics-list li { font-size: 11px; }
+  .roadmap-resource-links { flex-direction: column; }
+
+  /* SQL topics */
+  .sql-topic-card { padding: 20px 16px; }
+  .sql-topic-title { font-size: 15px; }
+  .sql-example pre, .sql-answer pre { font-size: 11px; padding: 12px; }
+
+  /* Python modules */
+  .py-module-card { padding: 20px 16px; }
+  .py-code-block pre { font-size: 11px; }
+
+  /* Setup guides: single column */
+  .guides-grid { grid-template-columns: 1fr; }
+  .guide-card { padding: 18px 16px; }
+  .guide-commands { font-size: 11px; }
+
+  /* Projects */
+  .project-card { padding: 20px 16px; }
+  .project-title { font-size: 15px; }
+  .project-arch-flow { gap: 4px; }
+  .arch-step { font-size: 11px; padding: 4px 8px; }
+  .project-code { font-size: 11px; }
+
+  /* Sidebar score: always show at bottom of sidebar */
+  .sidebar-score { margin: 16px 16px 0; }
+}
+
+@media (max-width: 400px) {
+  .main { padding: 68px 12px 32px; }
+  .hero h1 { font-size: 22px; }
+  .page-header h1 { font-size: 20px; }
+}

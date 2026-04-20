@@ -1164,4 +1164,32 @@ document.addEventListener('DOMContentLoaded', ()=>{
   });
 
   navigate('home');
+
+  // ---- MOBILE SIDEBAR TOGGLE ----
+  const menuBtn     = document.getElementById('mobile-menu-btn');
+  const sidebarEl   = document.getElementById('sidebar');
+  const overlayEl   = document.getElementById('sidebar-overlay');
+
+  function openSidebar() {
+    sidebarEl.classList.add('open');
+    overlayEl.classList.add('visible');
+    menuBtn.classList.add('open');
+  }
+  function closeSidebar() {
+    sidebarEl.classList.remove('open');
+    overlayEl.classList.remove('visible');
+    menuBtn.classList.remove('open');
+  }
+
+  menuBtn?.addEventListener('click', () =>
+    sidebarEl.classList.contains('open') ? closeSidebar() : openSidebar()
+  );
+  overlayEl?.addEventListener('click', closeSidebar);
+
+  // Close sidebar when nav item tapped on mobile
+  document.querySelectorAll('.nav-item').forEach(item =>
+    item.addEventListener('click', () => {
+      if (window.innerWidth <= 768) closeSidebar();
+    })
+  );
 });
