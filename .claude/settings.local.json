@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node --check /home/marwan/My_Knowledge_Platform/js/data.js)",
+      "Bash(node --check /home/marwan/My_Knowledge_Platform/js/data-extra.js)",
+      "Bash(node --check /home/marwan/My_Knowledge_Platform/js/app.js)",
+      "Bash(node -e \"const d = require\\('./js/data.js'\\); console.log\\('KNOWLEDGE:', KNOWLEDGE.length, 'GAPS:', GAPS.length, 'CONNECTIONS:', CONNECTIONS.length\\)\")",
+      "Bash(node -e ' *)",
+      "Bash(node --check /home/marwan/My_Knowledge_Platform/js/data-roadmap.js)",
+      "Bash(node --check /home/marwan/My_Knowledge_Platform/js/data-sql.js)",
+      "Bash(node --check /home/marwan/My_Knowledge_Platform/js/data-python.js)",
+      "Bash(node --check /home/marwan/My_Knowledge_Platform/js/data-guides.js)",
+      "Bash(gh auth *)",
+      "Bash(git --version)",
+      "Bash(gh --version)",
+      "Bash(curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg)",
+      "Bash(sudo dd *)",
+      "Bash(git init *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git config *)",
+      "Bash(git branch *)"
+    ]
+  }
+}

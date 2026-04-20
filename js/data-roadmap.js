@@ -1,0 +1,266 @@
+// ---- ROADMAP PHASES ----
+const ROADMAP_PHASES = [
+  {
+    id: 'phase-sql',
+    phase: 1,
+    emoji: '🗄️',
+    title: 'SQL Fundamentals',
+    subtitle: 'The language of data — master this before anything else',
+    timeEstimate: '3 weeks',
+    priority: 'critical',
+    description: 'SQL is the single most important skill for any data engineer. Every pipeline, transformation, data quality check, and analytical query runs on SQL. Do not move to Phase 2 until you can write complex queries without looking anything up.',
+    topics: [
+      'SELECT, FROM, WHERE, ORDER BY, LIMIT',
+      'GROUP BY + aggregate functions (COUNT, SUM, AVG, MIN, MAX)',
+      'HAVING vs WHERE — when each is used and why',
+      'All JOIN types: INNER, LEFT, RIGHT, FULL OUTER, CROSS',
+      'NULL handling: IS NULL, COALESCE, NULLIF, NVL',
+      'Subqueries: correlated and non-correlated',
+      'CASE WHEN … THEN … ELSE … END expressions',
+      'Date functions: DATE_TRUNC, EXTRACT, DATE_ADD, DATEDIFF',
+      'String functions: TRIM, UPPER, LOWER, SUBSTRING, CONCAT, LIKE',
+      'Window functions: ROW_NUMBER, RANK, DENSE_RANK, LAG, LEAD, SUM OVER',
+      'CTEs: WITH clause, multiple CTEs, recursive CTEs',
+      'Basic DDL: CREATE TABLE, INSERT, UPDATE, DELETE, ALTER TABLE',
+      'Primary keys, foreign keys, UNIQUE constraints',
+      'Indexes: what they are, when to add, B-tree basics',
+      'EXPLAIN / query plans: reading execution output'
+    ],
+    resources: [
+      { name: 'SQLZoo — interactive SQL exercises (free)', url: 'https://sqlzoo.net' },
+      { name: 'Mode Analytics SQL Tutorial (free)', url: 'https://mode.com/sql-tutorial/' },
+      { name: 'StrataScratch — real interview SQL problems (free tier)', url: 'https://www.stratascratch.com' },
+      { name: 'LeetCode SQL problems (free tier)', url: 'https://leetcode.com/problemset/database/' },
+      { name: 'PostgreSQL official docs', url: 'https://www.postgresql.org/docs/current/' }
+    ],
+    checkpoint: 'Write a query joining 3 tables, using ROW_NUMBER() to get the latest record per customer, filtering aggregated results with HAVING, and handling NULLs with COALESCE — without looking anything up.',
+    linkedSection: 'sql-fundamentals',
+    color: 'purple'
+  },
+  {
+    id: 'phase-python',
+    phase: 2,
+    emoji: '🐍',
+    title: 'Python for Data Engineering',
+    subtitle: 'The scripting layer — pipelines, transforms, and automation',
+    timeEstimate: '3 weeks',
+    priority: 'critical',
+    description: 'Python is the primary language for writing Airflow DAGs, data ingestion scripts, and data transformation logic. You do not need to be a software engineer — you need to be fluent with files, databases, APIs, and error handling.',
+    topics: [
+      'Variables, data types, lists, dicts, sets, tuples',
+      'Loops (for/while), conditionals (if/elif/else), functions',
+      'Virtual environments: venv, pip, requirements.txt',
+      'File I/O: reading/writing CSV, JSON, Parquet',
+      'pandas: read_csv, merge, groupby, fillna, dropna, to_sql',
+      'psycopg2: connect to PostgreSQL, execute queries, commit',
+      'SQLAlchemy: engine creation, pandas integration',
+      'requests library: GET/POST, headers, pagination, auth',
+      'Error handling: try/except/finally, custom exceptions',
+      'Logging: logging module, log levels, writing to file',
+      'Environment variables: python-dotenv, os.environ',
+      'Working with .env files and secrets (never hardcode credentials)',
+      'Project structure: src/, dags/, tests/, .gitignore'
+    ],
+    resources: [
+      { name: 'Python for Everybody — Coursera (free audit)', url: 'https://www.coursera.org/specializations/python' },
+      { name: 'Automate the Boring Stuff with Python (free online)', url: 'https://automatetheboringstuff.com' },
+      { name: 'Real Python — practical tutorials', url: 'https://realpython.com' },
+      { name: 'pandas documentation', url: 'https://pandas.pydata.org/docs/' }
+    ],
+    checkpoint: 'Write a Python script that calls a REST API with pagination, stores results in a pandas DataFrame, cleans nulls, and inserts into a PostgreSQL table using psycopg2. Credentials come from a .env file.',
+    linkedSection: 'python-de',
+    color: 'cyan'
+  },
+  {
+    id: 'phase-postgres',
+    phase: 3,
+    emoji: '🐘',
+    title: 'PostgreSQL & Local Setup',
+    subtitle: 'Install your tools — run everything locally first',
+    timeEstimate: '1 week',
+    priority: 'high',
+    description: 'Before building pipelines, your local environment must work. PostgreSQL is the standard open-source relational database for DE projects. Docker is how you run Airflow. This phase is about setup, not theory — follow the Setup Guides step by step.',
+    topics: [
+      'Install PostgreSQL locally and connect with psql',
+      'Create databases, users, and grant permissions',
+      'Connect from Python (psycopg2) and from a GUI (DBeaver)',
+      'Understand connection strings: postgresql://user:pass@host:5432/db',
+      'Install Docker + docker-compose',
+      'Run Airflow with official docker-compose.yaml',
+      'Install PySpark locally (pip install pyspark + Java)',
+      'Set up VS Code with Python, SQLTools, Docker extensions',
+      'Set up Git: init, add, commit, .gitignore for credentials'
+    ],
+    resources: [
+      { name: 'PostgreSQL download page', url: 'https://www.postgresql.org/download/' },
+      { name: 'Docker Desktop download', url: 'https://www.docker.com/products/docker-desktop/' },
+      { name: 'Official Airflow docker-compose.yaml', url: 'https://airflow.apache.org/docs/apache-airflow/stable/howto/docker-compose/index.html' },
+      { name: 'DBeaver Community (free DB GUI)', url: 'https://dbeaver.io/download/' },
+      { name: 'VS Code download', url: 'https://code.visualstudio.com/' }
+    ],
+    checkpoint: 'Open a terminal, connect to your local PostgreSQL database, create a table, insert 3 rows, and query them back. Then open Airflow at localhost:8080 and see the UI.',
+    linkedSection: 'setup',
+    color: 'blue'
+  },
+  {
+    id: 'phase-concepts',
+    phase: 4,
+    emoji: '🏛️',
+    title: 'DE Concepts & Architecture',
+    subtitle: 'The vocabulary and mental models of data engineering',
+    timeEstimate: '1 week',
+    priority: 'high',
+    description: 'Now that you can write SQL and Python, learn the conceptual framework that ties everything together. This is what the Knowledge Map covers — work through it systematically at this stage, not before.',
+    topics: [
+      'OLTP vs OLAP — when to use each',
+      'Fact tables, dimension tables, surrogate keys',
+      'Star schema vs snowflake schema — and grain',
+      'Pipeline phases: Stage → Transform → Core (Medallion)',
+      'ETL vs ELT — and when each applies',
+      'Incremental loading + watermark pattern',
+      'Idempotency — the most important pipeline property',
+      'ACID transactions — why they matter for pipelines',
+      'Data quality dimensions',
+      'Data Warehouse vs Data Lake vs Lakehouse',
+      'SCD Types 1, 2, 3',
+      'MERGE / UPSERT pattern',
+      'Parquet format — why and when',
+      'Normalization vs denormalization tradeoff'
+    ],
+    resources: [
+      { name: 'The Data Engineering Cookbook (free PDF)', url: 'https://github.com/andkret/Cookbook' },
+      { name: 'Fundamentals of Data Engineering (O\'Reilly — chapters free online)', url: 'https://www.oreilly.com/library/view/fundamentals-of-data/9781098108298/' }
+    ],
+    checkpoint: 'Explain to someone why you would use a star schema instead of a snowflake schema, what the grain of a fact table means, and why idempotency matters in a pipeline. Without notes.',
+    linkedSection: 'knowledge',
+    color: 'purple'
+  },
+  {
+    id: 'phase-airflow',
+    phase: 5,
+    emoji: '🌊',
+    title: 'Apache Airflow',
+    subtitle: 'Orchestrate and schedule your pipelines',
+    timeEstimate: '2 weeks',
+    priority: 'high',
+    description: 'Airflow is the standard DE orchestration tool. You need to be able to write a DAG from scratch, configure connections, and debug a failed task. Use the Setup Guide to get Airflow running, then build the Project 1 pipeline.',
+    topics: [
+      'DAG anatomy: default_args, schedule, catchup=False',
+      'Operators: PythonOperator, BashOperator, PostgresOperator',
+      'Task dependencies: >> and << operators',
+      'XComs: push and pull values between tasks',
+      'Sensors: FileSensor, ExternalTaskSensor, HttpSensor',
+      'Airflow Connections: storing DB credentials in the UI',
+      'Airflow Variables: parameterizing DAGs',
+      'Cron expressions: writing and reading them',
+      'execution_date vs data_interval_start — the gotcha',
+      'backfill: re-processing historical data',
+      'Reading task logs when a DAG fails',
+      'Debugging: running a task manually from CLI'
+    ],
+    resources: [
+      { name: 'Apache Airflow official docs', url: 'https://airflow.apache.org/docs/' },
+      { name: 'Astronomer Airflow guides (free)', url: 'https://docs.astronomer.io/learn' },
+      { name: 'Marc Lamberti Airflow YouTube (free)', url: 'https://www.youtube.com/@marclamberti' }
+    ],
+    checkpoint: 'Write an Airflow DAG from scratch that has 4 tasks: a sensor that checks for a file, a Python task that reads it and loads to PostgreSQL, a SQL task that transforms it, and an email alert if any task fails. Run it in your local Airflow.',
+    linkedSection: 'knowledge',
+    color: 'cyan'
+  },
+  {
+    id: 'phase-spark',
+    phase: 6,
+    emoji: '⚡',
+    title: 'Apache Spark / PySpark',
+    subtitle: 'Distributed processing for large-scale data',
+    timeEstimate: '2 weeks',
+    priority: 'high',
+    description: 'Spark is how you process data at a scale that pandas cannot handle. Start by running PySpark locally, then work through the Knowledge Map Spark topics, and build Project 3 to solidify the concepts.',
+    topics: [
+      'SparkSession creation and configuration',
+      'DataFrames: read, write, show, printSchema',
+      'Transformations vs actions — when execution happens',
+      'Common transformations: select, filter, withColumn, groupBy, join',
+      'Lazy evaluation — verifying with df.explain()',
+      'Shuffling — what triggers it and why it is expensive',
+      'Wide vs narrow transformations',
+      'Partitions: getNumPartitions, repartition, coalesce',
+      'Cache and persist — when and when not to use',
+      'Broadcast joins — eliminating shuffle for small tables',
+      'Data skew — diagnosis and fixes (salting, broadcast)',
+      'Storage partitioning: partitionBy when writing',
+      'spark.sql.shuffle.partitions tuning',
+      'Reading the Spark UI: stages, tasks, skew detection'
+    ],
+    resources: [
+      { name: 'PySpark official docs', url: 'https://spark.apache.org/docs/latest/api/python/' },
+      { name: 'Learning Spark (O\'Reilly — free chapters)', url: 'https://www.oreilly.com/library/view/learning-spark-2nd/9781492050032/' },
+      { name: 'Databricks community edition (free Spark cluster)', url: 'https://community.cloud.databricks.com/login.html' }
+    ],
+    checkpoint: 'Read a CSV with 1M+ rows in PySpark, apply a groupBy aggregation, join with a small lookup table using broadcast(), write the output as partitioned Parquet, and inspect the execution plan with df.explain(True).',
+    linkedSection: 'knowledge',
+    color: 'orange'
+  },
+  {
+    id: 'phase-dbt-cloud',
+    phase: 7,
+    emoji: '🔷',
+    title: 'dbt + Cloud Data Warehouses',
+    subtitle: 'Modern transformation layer and cloud platforms',
+    timeEstimate: '2 weeks',
+    priority: 'high',
+    description: 'dbt is the industry-standard transformation tool and appears in ~60% of DE job postings. Cloud DWs (BigQuery, Snowflake) are in ~90% of cloud-first roles. Both require hands-on — you cannot learn them by reading alone.',
+    topics: [
+      'dbt Core: dbt init, profiles.yml, project structure',
+      'Models: writing SELECT statements as .sql files',
+      'ref() function: building dependency DAG between models',
+      'Materializations: table, view, incremental, ephemeral',
+      'dbt tests: not_null, unique, accepted_values, relationships',
+      'dbt run, dbt test, dbt docs generate, dbt docs serve',
+      'Sources: defining raw tables dbt depends on',
+      'BigQuery: create project, load CSV to GCS, query in BQ',
+      'Snowflake: virtual warehouses, time travel feature',
+      'Columnar storage: why cloud DWs are fast for analytics',
+      'Cost model: BigQuery pay-per-scan, Snowflake credits'
+    ],
+    resources: [
+      { name: 'dbt Learn — free official courses', url: 'https://learn.getdbt.com' },
+      { name: 'dbt Core documentation', url: 'https://docs.getdbt.com' },
+      { name: 'Google BigQuery free tier (10GB/month)', url: 'https://cloud.google.com/bigquery/docs/sandbox' },
+      { name: 'Snowflake 30-day free trial', url: 'https://signup.snowflake.com' }
+    ],
+    checkpoint: 'Use dbt Core against your local PostgreSQL: write 3 models (staging → cleaned → aggregated), add not_null and unique tests, run dbt test, and view the lineage in dbt docs serve.',
+    linkedSection: 'gaps',
+    color: 'green'
+  },
+  {
+    id: 'phase-interview',
+    phase: 8,
+    emoji: '💼',
+    title: 'Interview Preparation',
+    subtitle: 'Convert your knowledge into confident interview answers',
+    timeEstimate: '2 weeks',
+    priority: 'high',
+    description: 'You now have the knowledge — this phase is about retrieval practice and communication. Interviewers test whether you can explain concepts clearly, not whether you memorized definitions. Use every section of this platform intensively.',
+    topics: [
+      'Active recall with Flashcards (all topics, mark honestly)',
+      'Interview Q\'s — answer aloud before revealing answers',
+      'Code Snippets — explain every line to yourself',
+      'Topic Connections — these are the synthesis answers',
+      'Gap Analysis — study every critical and high priority gap',
+      'Write SQL by hand: JOINs, window functions, MERGE (no autocomplete)',
+      'Write a DAG from memory: 3 tasks, dependencies, default_args',
+      'Explain your projects: what problem, what tools, what you built, what you learned',
+      'Practice the "tell me about yourself" arc for a DE role',
+      'Prepare 3 stories about debugging pipeline issues or data problems'
+    ],
+    resources: [
+      { name: 'StrataScratch — practice with real company questions', url: 'https://www.stratascratch.com' },
+      { name: 'DataExpert.io community (free tier)', url: 'https://www.dataexpert.io' },
+      { name: 'Interview Readiness section — this platform', url: '#' }
+    ],
+    checkpoint: 'Complete all flashcard topics with >80% "Got It". Score >85 on Interview Readiness page. Write a full SQL query with window functions from memory in under 5 minutes.',
+    linkedSection: 'interview',
+    color: 'pink'
+  }
+];

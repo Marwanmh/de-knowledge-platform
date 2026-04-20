@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Marwan's Data Engineering Hub</title>
+  <link rel="stylesheet" href="css/main.css"/>
+</head>
+<body>
+<div id="app">
+
+  <!-- ===== SIDEBAR ===== -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="name">Marwan Mohamed</div>
+      <div class="role"><span class="dot"></span>Data Engineer</div>
+    </div>
+
+    <!-- Search trigger -->
+    <div class="search-trigger" id="search-trigger-btn">
+      <span>🔍</span>
+      <span>Search everything...</span>
+      <span class="search-trigger-shortcut">Ctrl+K</span>
+    </div>
+
+    <div class="nav-section-label">Platform</div>
+    <a class="nav-item" data-nav="home">
+      <span class="nav-icon">🏠</span> Home
+    </a>
+    <a class="nav-item" data-nav="roadmap">
+      <span class="nav-icon">🗺️</span> Learning Roadmap
+    </a>
+
+    <div class="nav-section-label">Learn</div>
+    <a class="nav-item" data-nav="sql-fundamentals">
+      <span class="nav-icon">🗄️</span> SQL Fundamentals
+    </a>
+    <a class="nav-item" data-nav="python-de">
+      <span class="nav-icon">🐍</span> Python for DE
+    </a>
+    <a class="nav-item" data-nav="setup-guides">
+      <span class="nav-icon">⚙️</span> Setup Guides
+    </a>
+    <a class="nav-item" data-nav="projects">
+      <span class="nav-icon">🚀</span> Guided Projects
+    </a>
+
+    <div class="nav-section-label">Knowledge</div>
+    <a class="nav-item" data-nav="knowledge">
+      <span class="nav-icon">📚</span> Knowledge Map
+      <span class="nav-badge">20</span>
+    </a>
+    <a class="nav-item" data-nav="corrections">
+      <span class="nav-icon">⚠️</span> Corrections
+      <span class="nav-badge" style="background:rgba(245,158,11,0.2);color:#fcd34d">2</span>
+    </a>
+
+    <div class="nav-section-label">Practice</div>
+    <a class="nav-item" data-nav="flashcards">
+      <span class="nav-icon">🃏</span> Flashcards
+    </a>
+    <a class="nav-item" data-nav="interview-questions">
+      <span class="nav-icon">❓</span> Interview Q's
+    </a>
+    <a class="nav-item" data-nav="snippets">
+      <span class="nav-icon">💻</span> Code Snippets
+    </a>
+
+    <div class="nav-section-label">Growth</div>
+    <a class="nav-item" data-nav="gaps">
+      <span class="nav-icon">🎯</span> Gap Analysis
+      <span class="nav-badge">12</span>
+    </a>
+    <a class="nav-item" data-nav="connections">
+      <span class="nav-icon">🔗</span> Connections
+      <span class="nav-badge">14</span>
+    </a>
+
+    <div class="nav-section-label">Career</div>
+    <a class="nav-item" data-nav="interview">
+      <span class="nav-icon">💼</span> Interview Readiness
+    </a>
+
+    <div class="sidebar-score">
+      <div class="score-label">Interview Score</div>
+      <div class="score-number" id="sidebar-score">—</div>
+      <div class="score-desc" id="sidebar-score-desc">Rate topics & study gaps ⭐</div>
+    </div>
+  </aside>
+
+  <!-- ===== MAIN ===== -->
+  <main class="main">
+
+    <!-- HOME -->
+    <section id="home" class="section">
+      <div class="hero">
+        <div class="hero-eyebrow">Personal Knowledge Platform</div>
+        <h1>Marwan's DE Hub</h1>
+        <p>Your complete Data Engineering knowledge base — organized, corrected, gap-analyzed, and connected. Rate topics with stars to track your confidence and watch your interview score update live.</p>
+        <div class="hero-stats">
+          <div class="hero-stat">
+            <span class="stat-num purple" id="stat-topics">—</span>
+            <span class="stat-label">Topics Known</span>
+          </div>
+          <div class="hero-stat">
+            <span class="stat-num cyan" id="stat-gaps">—</span>
+            <span class="stat-label">Gaps Identified</span>
+          </div>
+          <div class="hero-stat">
+            <span class="stat-num green" id="stat-score">—</span>
+            <span class="stat-label">Interview Readiness</span>
+          </div>
+          <div class="hero-stat">
+            <span class="stat-num orange" id="stat-corrections">—</span>
+            <span class="stat-label">Corrections Found</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Daily Recommendation -->
+      <div id="daily-rec"></div>
+
+      <!-- Quick nav cards -->
+      <div class="card-grid">
+        <div class="card" style="cursor:pointer" onclick="navigate('knowledge')">
+          <div style="font-size:28px;margin-bottom:12px">📚</div>
+          <div style="font-size:16px;font-weight:700;margin-bottom:6px">Knowledge Map</div>
+          <div style="font-size:13px;color:var(--text-secondary)">20 topics with deep explanations, ELI5 mode, and star ratings that update your interview score live.</div>
+        </div>
+        <div class="card" style="cursor:pointer" onclick="navigate('flashcards')">
+          <div style="font-size:28px;margin-bottom:12px">🃏</div>
+          <div style="font-size:16px;font-weight:700;margin-bottom:6px">Flashcards</div>
+          <div style="font-size:13px;color:var(--text-secondary)">45 flip cards across all topics. Active recall is 10× better than reading for interview prep.</div>
+        </div>
+        <div class="card" style="cursor:pointer" onclick="navigate('interview-questions')">
+          <div style="font-size:28px;margin-bottom:12px">❓</div>
+          <div style="font-size:16px;font-weight:700;margin-bottom:6px">Interview Q's</div>
+          <div style="font-size:13px;color:var(--text-secondary)">Real junior DE interview questions per topic with model answers and pro tips on what to emphasize.</div>
+        </div>
+        <div class="card" style="cursor:pointer" onclick="navigate('snippets')">
+          <div style="font-size:28px;margin-bottom:12px">💻</div>
+          <div style="font-size:16px;font-weight:700;margin-bottom:6px">Code Snippets</div>
+          <div style="font-size:13px;color:var(--text-secondary)">Production-quality PySpark, SQL, and Airflow code examples for every concept you know.</div>
+        </div>
+        <div class="card" style="cursor:pointer" onclick="navigate('corrections')">
+          <div style="font-size:28px;margin-bottom:12px">⚠️</div>
+          <div style="font-size:16px;font-weight:700;margin-bottom:6px">Corrections</div>
+          <div style="font-size:13px;color:var(--text-secondary)">2 inaccuracies found and corrected — the cache() RDD vs DataFrame distinction is a classic interview trick question.</div>
+        </div>
+        <div class="card" style="cursor:pointer" onclick="navigate('gaps')">
+          <div style="font-size:28px;margin-bottom:12px">🎯</div>
+          <div style="font-size:16px;font-weight:700;margin-bottom:6px">Gap Analysis</div>
+          <div style="font-size:13px;color:var(--text-secondary)">12 prioritized topics to learn next — each with a mini-lesson connecting to what you already know.</div>
+        </div>
+        <div class="card" style="cursor:pointer" onclick="navigate('connections')">
+          <div style="font-size:28px;margin-bottom:12px">🔗</div>
+          <div style="font-size:16px;font-weight:700;margin-bottom:6px">Topic Connections</div>
+          <div style="font-size:13px;color:var(--text-secondary)">14 hidden links between concepts. Understanding WHY they connect builds expert-level intuition.</div>
+        </div>
+        <div class="card" style="cursor:pointer" onclick="navigate('interview')">
+          <div style="font-size:28px;margin-bottom:12px">💼</div>
+          <div style="font-size:16px;font-weight:700;margin-bottom:6px">Interview Readiness</div>
+          <div style="font-size:13px;color:var(--text-secondary)">72/100 base score — updates dynamically as you rate topics. Detailed breakdown + 5 priority weak points.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- KNOWLEDGE MAP -->
+    <section id="knowledge" class="section">
+      <div class="page-header">
+        <h1>Knowledge Map</h1>
+        <p>Every topic you explained — expanded with key points, ELI5 explanations, and confidence ratings. Stars update your interview score live.</p>
+      </div>
+      <div id="knowledge-content"></div>
+    </section>
+
+    <!-- CORRECTIONS -->
+    <section id="corrections" class="section">
+      <div class="page-header">
+        <h1>Corrections</h1>
+        <p>2 inaccuracies in your explanations — corrected with precise rules. Not critical, but enough to trip you up in an interview.</p>
+      </div>
+      <div id="corrections-content"></div>
+    </section>
+
+    <!-- FLASHCARDS -->
+    <section id="flashcards" class="section">
+      <div class="page-header">
+        <h1>Flashcards</h1>
+        <p>Select a topic, flip through cards, mark what you know. Active recall beats passive reading every time.</p>
+      </div>
+      <div id="flashcards-content"></div>
+    </section>
+
+    <!-- INTERVIEW QUESTIONS -->
+    <section id="interview-questions" class="section">
+      <div class="page-header">
+        <h1>Interview Questions</h1>
+        <p>Real questions at junior DE level — model answers written for how you should actually respond in the room, with pro tips on what interviewers are really testing.</p>
+      </div>
+      <div id="iq-content"></div>
+    </section>
+
+    <!-- CODE SNIPPETS -->
+    <section id="snippets" class="section">
+      <div class="page-header">
+        <h1>Code Snippets</h1>
+        <p>Production-quality code for every concept — PySpark, SQL, and Airflow. Understanding the code anchors the theory.</p>
+      </div>
+      <div id="snippets-content"></div>
+    </section>
+
+    <!-- GAP ANALYSIS -->
+    <section id="gaps" class="section">
+      <div class="page-header">
+        <h1>Gap Analysis</h1>
+        <p>What to learn next — prioritized by interview impact and connected to what you already know.</p>
+      </div>
+      <div class="filter-bar">
+        <button class="filter-btn active" data-filter="all">All Gaps</button>
+        <button class="filter-btn" data-filter="critical">🔴 Critical</button>
+        <button class="filter-btn" data-filter="high">🟡 High</button>
+        <button class="filter-btn" data-filter="medium">🟣 Medium</button>
+        <button class="filter-btn" data-filter="low">🟢 Low</button>
+      </div>
+      <div id="gaps-content"></div>
+    </section>
+
+    <!-- CONNECTIONS -->
+    <section id="connections" class="section">
+      <div class="page-header">
+        <h1>Topic Connections</h1>
+        <p>14 relationships between concepts you know. Understanding WHY they connect separates practitioners from experts.</p>
+      </div>
+      <div id="connections-content"></div>
+    </section>
+
+    <!-- INTERVIEW READINESS -->
+    <section id="interview" class="section">
+      <div class="page-header">
+        <h1>Interview Readiness</h1>
+        <p>Honest assessment for a Junior DE role. Rate topics with stars in Knowledge Map to update this score dynamically.</p>
+      </div>
+      <div id="readiness-content"></div>
+    </section>
+
+    <!-- ROADMAP -->
+    <section id="roadmap" class="section">
+      <div class="page-header">
+        <h1>Learning Roadmap</h1>
+        <p>8 phases from zero to interview-ready. Each phase has a checkpoint — don't move on until you can pass it without looking anything up.</p>
+      </div>
+      <div id="roadmap-content"></div>
+    </section>
+
+    <!-- SQL FUNDAMENTALS -->
+    <section id="sql-fundamentals" class="section">
+      <div class="page-header">
+        <h1>SQL Fundamentals</h1>
+        <p>Structured SQL practice across 3 tiers — Basics, Intermediate, Advanced. Read the explanation, study the example, then solve the practice problem before revealing the answer.</p>
+      </div>
+      <div class="filter-bar">
+        <button class="filter-btn active" data-sql-filter="all">All Tiers</button>
+        <button class="filter-btn" data-sql-filter="1">Tier 1 — Basics</button>
+        <button class="filter-btn" data-sql-filter="2">Tier 2 — Intermediate</button>
+        <button class="filter-btn" data-sql-filter="3">Tier 3 — Advanced</button>
+      </div>
+      <div id="sql-content"></div>
+    </section>
+
+    <!-- PYTHON FOR DE -->
+    <section id="python-de" class="section">
+      <div class="page-header">
+        <h1>Python for Data Engineering</h1>
+        <p>6 modules covering everything a DE needs in Python — from virtual environments to pandas optimization. Each module has a runnable code example.</p>
+      </div>
+      <div id="python-content"></div>
+    </section>
+
+    <!-- SETUP GUIDES -->
+    <section id="setup-guides" class="section">
+      <div class="page-header">
+        <h1>Setup Guides</h1>
+        <p>Step-by-step terminal instructions for every tool in the DE stack. Follow these exactly — copy the commands, verify each step works before moving on.</p>
+      </div>
+      <div id="guides-content"></div>
+    </section>
+
+    <!-- GUIDED PROJECTS -->
+    <section id="projects" class="section">
+      <div class="page-header">
+        <h1>Guided Projects</h1>
+        <p>3 end-to-end projects that mirror real DE work. Build them in order — each one reinforces the previous and adds a new layer of complexity.</p>
+      </div>
+      <div id="projects-content"></div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ===== SEARCH OVERLAY ===== -->
+<div class="search-overlay" id="search-overlay">
+  <div class="search-modal">
+    <div class="search-input-row">
+      <span class="search-input-icon">🔍</span>
+      <input class="search-input-field" id="search-field" type="text" placeholder="Search topics, gaps, questions, snippets..."/>
+      <button class="search-close-btn" id="search-close-btn">ESC</button>
+    </div>
+    <div class="search-results" id="search-results"></div>
+    <div class="search-shortcut">
+      <span><kbd>↵</kbd> select</span>
+      <span><kbd>Esc</kbd> close</span>
+      <span><kbd>Ctrl+K</kbd> open</span>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TOAST ===== -->
+<div class="score-updated-toast" id="score-toast"></div>
+
+<script src="js/data.js"></script>
+<script src="js/data-extra.js"></script>
+<script src="js/data-roadmap.js"></script>
+<script src="js/data-sql.js"></script>
+<script src="js/data-python.js"></script>
+<script src="js/data-guides.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
