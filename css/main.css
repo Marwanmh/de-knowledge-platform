@@ -82,7 +82,7 @@ body::after {
 ::-webkit-scrollbar-thumb:hover { background: rgba(139,92,246,0.5); }
 
 /* ---- LAYOUT ---- */
-#app { display: flex; min-height: 100vh; position: relative; z-index: 1; }
+#app { display: flex; min-height: 100vh; position: relative; }
 
 /* ---- SIDEBAR ---- */
 .sidebar {
@@ -96,8 +96,9 @@ body::after {
   display: flex;
   flex-direction: column;
   padding: 24px 0;
-  z-index: 100;
+  z-index: 200;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .sidebar-logo {
@@ -2765,15 +2766,20 @@ mark {
 
 @media (max-width: 768px) {
 
-  /* ---- Hamburger ---- */
-  .mobile-menu-btn { display: flex; }
+  /* ---- Hamburger: respect iOS notch ---- */
+  .mobile-menu-btn {
+    display: flex;
+    top: max(14px, env(safe-area-inset-top, 14px));
+    left: max(14px, env(safe-area-inset-left, 14px));
+  }
 
   /* ---- Sidebar: slide off-screen, opens on toggle ---- */
   .sidebar {
     transform: translateX(-100%);
     transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: 200;
     width: 280px;
+    padding-top: max(24px, env(safe-area-inset-top, 24px));
+    padding-bottom: max(24px, env(safe-area-inset-bottom, 24px));
   }
   .sidebar.open { transform: translateX(0); }
 
@@ -2783,6 +2789,8 @@ mark {
     max-width: 100% !important;
     width: 100%;
     padding: 68px 16px 40px;
+    padding-top: calc(68px + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(40px + env(safe-area-inset-bottom, 0px));
     box-sizing: border-box;
   }
 
@@ -2930,10 +2938,28 @@ mark {
 
   /* ---- Sidebar score ---- */
   .sidebar-score { margin: 16px 16px 0; }
+
+  /* ---- Search overlay: compact on mobile ---- */
+  .search-overlay { padding-top: 20px; align-items: flex-start; }
+  .search-modal { border-radius: 0 0 16px 16px; max-width: 100%; }
+
+  /* ---- Score toast: keep away from edges ---- */
+  .score-updated-toast {
+    bottom: max(20px, env(safe-area-inset-bottom, 20px));
+    right: max(20px, env(safe-area-inset-right, 20px));
+    font-size: 13px;
+    padding: 10px 16px;
+  }
+
+  /* ---- Nav items: bigger touch targets ---- */
+  .nav-item { min-height: 44px; }
 }
 
 @media (max-width: 400px) {
-  .main { padding: 62px 12px 32px; }
+  .main {
+    padding: 62px 12px 32px;
+    padding-top: calc(62px + env(safe-area-inset-top, 0px));
+  }
   .hero h1 { font-size: 20px; }
   .page-header h1 { font-size: 18px; }
   .flashcard-container { height: 200px; }
