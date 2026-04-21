@@ -51,58 +51,6 @@ Running heavy analytics on your OLTP database slows down your actual app. A sing
 The data engineer's job is to move data from OLTP → OLAP (the data warehouse) so analysts can query freely without touching production.`
   },
   {
-    id: 'etl-elt',
-    keywords: ['etl','elt','extract','transform','load','difference','pipeline'],
-    title: 'ETL vs ELT',
-    answer: `ETL and ELT describe the order in which you move and transform data.
-
-**ETL (Extract → Transform → Load):**
-Transform data BEFORE loading it into the warehouse. Used when the warehouse is expensive or limited (old approach — Oracle, Teradata).
-- Extract raw data from source
-- Transform it in a separate compute layer (Spark, pandas, DataStage)
-- Load only clean data into the warehouse
-
-**ELT (Extract → Load → Transform):**
-Load raw data into the warehouse FIRST, then transform it there using SQL. Modern approach enabled by cheap cloud compute (BigQuery, Snowflake, Redshift).
-- Extract raw data
-- Load it straight into a raw/staging layer
-- Transform using SQL/dbt inside the warehouse
-
-**Why ELT is winning:**
-- Cloud warehouses have nearly unlimited compute — transformation is cheap
-- Raw data is preserved — if business logic changes, you can re-transform without re-ingesting
-- dbt is built entirely around ELT — all transformations are SQL SELECT statements
-
-**Simple rule:** If you're using a cloud data warehouse + dbt → you're doing ELT. If you're using Airflow + pandas/Spark to clean before loading → you're doing ETL.`
-  },
-  {
-    id: 'data-warehouse',
-    keywords: ['data warehouse','warehouse','dwh','dw','snowflake','bigquery','redshift','what is warehouse'],
-    title: 'What is a Data Warehouse?',
-    answer: `A data warehouse is a central database optimized for analytical queries — it stores historical data from all your business systems in one place.
-
-**Why it exists:**
-Your production database (OLTP) only keeps current state. The warehouse keeps history. Analysts need to ask "how did revenue trend over the past 2 years?" — the warehouse answers that.
-
-**How data gets there:**
-Data engineers build pipelines that extract data from production databases, APIs, and files → clean and transform it → load it into the warehouse on a schedule.
-
-**Key characteristics:**
-- Column-based storage (fast for aggregations)
-- Designed for reads, not writes
-- Stores months or years of history
-- Structured in star or snowflake schema
-
-**Popular warehouses:**
-- **BigQuery** (Google) — pay per query scanned, serverless
-- **Snowflake** — separate compute and storage, time-travel feature
-- **Redshift** (AWS) — cluster-based, tight AWS integration
-- **PostgreSQL** — not a warehouse, but used as one for small-scale DE projects
-
-**Data Lake vs Warehouse:**
-Warehouse = structured, clean, SQL-queryable. Lake = raw files in any format (Parquet, JSON, CSV) stored in object storage (S3, GCS). Lakehouse = hybrid (Delta Lake, Iceberg).`
-  },
-  {
     id: 'pipeline-phases',
     keywords: ['pipeline','stage','staging','transform','core','medallion','bronze','silver','gold','phases','layers'],
     title: 'Pipeline Phases / Medallion Architecture',
@@ -125,43 +73,6 @@ Final tables structured for business use. Star schema with fact and dimension ta
 
 **Why this matters in interviews:**
 Interviewers ask "how would you design a pipeline?" — always describe these 3 layers. Shows you understand data quality, reprocessability, and separation of concerns.`
-  },
-  {
-    id: 'incremental-loading',
-    keywords: ['incremental','loading','watermark','delta','full load','incremental load','updated_at','last run'],
-    title: 'Incremental Loading',
-    answer: `Incremental loading means only loading new or changed records since the last pipeline run — instead of re-loading everything every time.
-
-**Why full load is bad:**
-If your orders table has 50 million rows and you reload all of it every hour, that's 50M rows of network transfer, compute, and storage cost — every hour. Wasteful and slow.
-
-**The watermark pattern (most common):**
-\`\`\`sql
--- Load only rows newer than last run
-SELECT * FROM orders
-WHERE updated_at > '2024-01-15 06:00:00'  -- last_run_timestamp
-\`\`\`
-
-**How it works step by step:**
-1. Read \`last_run_timestamp\` from a metadata table
-2. Query source: \`WHERE updated_at > last_run_timestamp\`
-3. Load those rows into staging
-4. On success, write new \`last_run_timestamp\` back to metadata table
-5. Next run uses the new timestamp
-
-**The metadata table:**
-\`\`\`sql
-CREATE TABLE pipeline_metadata (
-  pipeline_name VARCHAR(100),
-  last_run_timestamp TIMESTAMP,
-  status VARCHAR(20)
-);
-\`\`\`
-
-**Watch out for:**
-- **Late-arriving data:** Records with old timestamps that arrive late — you'll miss them
-- **Soft deletes:** Deleted records don't appear as "new" — use a deleted_at flag or SCD Type 2
-- **No updated_at column:** You'll have to use full load or ID range filtering`
   },
   {
     id: 'idempotency',
@@ -429,50 +340,6 @@ SELECT a.color, b.size FROM colors a CROSS JOIN sizes b;
 **The most common interview question:**
 "What's the difference between LEFT JOIN and INNER JOIN?"
 Answer: INNER JOIN drops rows with no match. LEFT JOIN keeps all rows from the left table and fills right-side columns with NULL when there's no match.`
-  },
-  {
-    id: 'window-functions',
-    keywords: ['window function','row_number','rank','dense_rank','lag','lead','partition by','over','running total','window'],
-    title: 'Window Functions',
-    answer: `Window functions perform calculations across a set of related rows without collapsing them — unlike GROUP BY which reduces multiple rows to one.
-
-**Syntax pattern:**
-\`\`\`sql
-FUNCTION() OVER (PARTITION BY col ORDER BY col)
-\`\`\`
-
-**ROW_NUMBER — unique row number per partition:**
-\`\`\`sql
--- Get the latest order per customer (most common DE pattern)
-SELECT * FROM (
-  SELECT *, ROW_NUMBER() OVER (
-    PARTITION BY customer_id ORDER BY order_date DESC
-  ) AS rn
-  FROM orders
-) t WHERE rn = 1;
-\`\`\`
-
-**RANK vs DENSE_RANK (tie handling):**
-\`\`\`sql
--- If two rows tie for 2nd place:
--- RANK gives: 1, 2, 2, 4  (skips 3)
--- DENSE_RANK gives: 1, 2, 2, 3  (no gap)
-\`\`\`
-
-**LAG / LEAD — access previous or next row:**
-\`\`\`sql
-SELECT month, revenue,
-  LAG(revenue, 1) OVER (ORDER BY month) AS prev_month_revenue,
-  revenue - LAG(revenue, 1) OVER (ORDER BY month) AS mom_change
-FROM monthly_revenue;
-\`\`\`
-
-**Running total:**
-\`\`\`sql
-SUM(revenue) OVER (ORDER BY date ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)
-\`\`\`
-
-**Key insight:** PARTITION BY is like GROUP BY but it doesn't collapse rows. Think of it as "reset the calculation for each group."`
   },
   {
     id: 'ctes',
@@ -2475,17 +2342,6 @@ function scoreKB(entry, tokens, subject, intent) {
   if (intent === 'vs' && (entry.id.includes('vs') || entry.keywords.some(k => k.includes('vs') || k.includes('difference')))) score += 8;
   if (intent === 'example' && (entry.answer.includes('```') || entry.answer.includes('example'))) score += 4;
 
-  return score;
-}
-
-function scoreKB(entry, tokens) {
-  let score = 0;
-  const titleTokens = botTokenize(entry.title);
-  tokens.forEach(t => {
-    if (entry.keywords.some(k => k === t || k.includes(t) || t.includes(k))) score += 4;
-    if (titleTokens.some(k => k === t || k.includes(t))) score += 3;
-    if (entry.answer.toLowerCase().includes(t)) score += 1;
-  });
   return score;
 }
 
