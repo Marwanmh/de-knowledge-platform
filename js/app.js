@@ -1140,14 +1140,113 @@ function buildBot() {
   }
 
   function renderMarkdown(text) {
+    // 1. Extract code blocks → placeholders to protect them from other transforms
+    const codeBlocks = [];
+    text = text.replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) => {
+      const idx = codeBlocks.length;
+      codeBlocks.push(`<pre class="bot-code"><code>${escapeHtml(code.trim())}</code></pre>`);
+      return `\x00CODE${idx}\x00`;
+    });
+
+    // 2. Split into lines for block-level processing
+    const lines = text.split('\n');
+    const out = [];
+    let i = 0;
+
+    while (i < lines.length) {
+      const line = lines[i];
+
+      // Code placeholder
+      if (/^\x00CODE\d+\x00$/.test(line.trim())) {
+        const idx = parseInt(line.trim().replace(/\x00CODE(\d+)\x00/, '$1'));
+        out.push(codeBlocks[idx]);
+        i++;
+        continue;
+      }
+
+      // Horizontal rule: --- or ===
+      if (/^(-{3,}|={3,})$/.test(line.trim())) {
+        out.push('<hr class="bot-hr">');
+        i++;
+        continue;
+      }
+
+      // Heading: ### or ## or #
+      const headM = line.match(/^(#{1,3})\s+(.+)$/);
+      if (headM) {
+        const lvl = headM[1].length + 2; // h3,h4,h5
+        out.push(`<h${lvl} class="bot-heading">${inlineMarkdown(headM[2])}</h${lvl}>`);
+        i++;
+        continue;
+      }
+
+      // Table: starts with |
+      if (line.trim().startsWith('|')) {
+        const tableLines = [];
+        while (i < lines.length && lines[i].trim().startsWith('|')) {
+          tableLines.push(lines[i]);
+          i++;
+        }
+        out.push(renderTable(tableLines));
+        continue;
+      }
+
+      // Bullet list: - or *
+      if (/^(\s*[-*])\s/.test(line)) {
+        const listItems = [];
+        while (i < lines.length && /^(\s*[-*])\s/.test(lines[i])) {
+          listItems.push(`<li>${inlineMarkdown(lines[i].replace(/^\s*[-*]\s/, ''))}</li>`);
+          i++;
+        }
+        out.push(`<ul class="bot-list">${listItems.join('')}</ul>`);
+        continue;
+      }
+
+      // Numbered list: 1. 2. etc.
+      if (/^\d+\.\s/.test(line)) {
+        const listItems = [];
+        while (i < lines.length && /^\d+\.\s/.test(lines[i])) {
+          listItems.push(`<li>${inlineMarkdown(lines[i].replace(/^\d+\.\s/, ''))}</li>`);
+          i++;
+        }
+        out.push(`<ol class="bot-list">${listItems.join('')}</ol>`);
+        continue;
+      }
+
+      // Empty line → paragraph break
+      if (line.trim() === '') {
+        i++;
+        continue;
+      }
+
+      // Regular paragraph line
+      out.push(`<p class="bot-p">${inlineMarkdown(line)}</p>`);
+      i++;
+    }
+
+    return out.join('');
+  }
+
+  function inlineMarkdown(text) {
+    // Restore code placeholders inline (shouldn't happen but guard)
     return text
-      .replace(/```(\w*)\n([\s\S]*?)```/g, (_,lang,code) =>
-        `<pre class="bot-code"><code>${escapeHtml(code.trim())}</code></pre>`)
-      .replace(/`([^`]+)`/g, '<code class="bot-inline-code">$1</code>')
       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\n\n/g, '</p><p>')
-      .replace(/\n/g, '<br>')
-      .replace(/^/, '<p>').replace(/$/, '</p>');
+      .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+      .replace(/`([^`]+)`/g, '<code class="bot-inline-code">$1</code>');
+  }
+
+  function renderTable(lines) {
+    // Filter out separator row (|---|---|)
+    const rows = lines.filter(l => !/^\|[-|\s:]+\|$/.test(l.trim()));
+    if (rows.length === 0) return '';
+    let html = '<div class="bot-table-wrap"><table class="bot-table">';
+    rows.forEach((row, idx) => {
+      const cells = row.split('|').filter((_, ci) => ci > 0 && ci < row.split('|').length - 1);
+      const tag = idx === 0 ? 'th' : 'td';
+      html += '<tr>' + cells.map(c => `<${tag}>${inlineMarkdown(c.trim())}</${tag}>`).join('') + '</tr>';
+    });
+    html += '</table></div>';
+    return html;
   }
 
   function addMessage(text, role) {
