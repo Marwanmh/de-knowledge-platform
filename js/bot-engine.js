@@ -3130,11 +3130,22 @@ const BOT_INTENTS = [
   { type: 'howto',       re: /\bhow (to|do|can|does|did|would|should)\b|\bbest (way|practice)\b|\bsteps\b/i },
   { type: 'why',         re: /\bwhy\b|\bwhen (to|should|would)\b|\bpurpose\b|\breason\b|\bbenefit\b/i },
   { type: 'define',      re: /\b(what is|what are|what's|what does|define|explain|describe|tell me about)\b/i },
+  { type: 'quiz',        re: /\b(quiz|test me|practice|question|ask me|challenge me|drill)\b/i },
 ];
 
 // --- Conversation memory ---
 let BOT_LAST_TOPIC = null;   // last matched KB entry id
 let BOT_LAST_ENTRY = null;   // last matched KB entry object
+const BOT_HISTORY  = [];     // last 5 matched entries (most recent first)
+
+function pushHistory(entry) {
+  if (!entry) return;
+  // Remove if already in history, then push to front
+  const idx = BOT_HISTORY.findIndex(e => e.id === entry.id);
+  if (idx !== -1) BOT_HISTORY.splice(idx, 1);
+  BOT_HISTORY.unshift(entry);
+  if (BOT_HISTORY.length > 5) BOT_HISTORY.pop();
+}
 
 function detectIntent(text) {
   const lower = text.toLowerCase().trim();
@@ -3150,6 +3161,25 @@ function expandSynonyms(text) {
     t = t.replace(new RegExp(from.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'), 'gi'), ' ' + to + ' ');
   });
   return t;
+}
+
+// Simple edit-distance for typo tolerance (handles 1-2 char differences)
+function editDistance(a, b) {
+  if (Math.abs(a.length - b.length) > 3) return 99;
+  const m = a.length, n = b.length;
+  const dp = Array.from({length: m+1}, (_, i) => Array.from({length: n+1}, (_, j) => i || j));
+  for (let i = 1; i <= m; i++)
+    for (let j = 1; j <= n; j++)
+      dp[i][j] = a[i-1] === b[j-1] ? dp[i-1][j-1] : 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
+  return dp[m][n];
+}
+
+// Returns true if token fuzzy-matches a keyword (typo-tolerant)
+function fuzzyMatch(token, keyword) {
+  if (token.length < 4) return token === keyword;
+  if (keyword.includes(token) || token.includes(keyword)) return true;
+  const threshold = token.length <= 6 ? 1 : 2;
+  return editDistance(token, keyword) <= threshold;
 }
 
 function botTokenize(text) {
@@ -3179,19 +3209,21 @@ function scoreKB(entry, tokens, subject, intent) {
   // Exact title match (highest weight)
   if (subject && titleLower.includes(subject)) score += 20;
 
-  // Keyword phrase match
+  // Keyword phrase match (exact + fuzzy)
   entry.keywords.forEach(kw => {
     if (subject && subject.includes(kw)) score += 12;
     tokens.forEach(t => {
       if (kw === t) score += 6;
       else if (kw.includes(t) || t.includes(kw)) score += 3;
+      else if (t.length >= 4 && fuzzyMatch(t, kw)) score += 2;  // typo tolerance
     });
   });
 
-  // Title token match
+  // Title token match (exact + fuzzy)
   const titleTokens = botTokenize(entry.title);
   tokens.forEach(t => {
     if (titleTokens.some(tt => tt === t || tt.includes(t) || t.includes(tt))) score += 4;
+    else if (t.length >= 4 && titleTokens.some(tt => fuzzyMatch(t, tt))) score += 2;
   });
 
   // Answer body match (lower weight, just relevance signal)
@@ -3365,6 +3397,48 @@ function intentIntro(intent, title) {
   return opts[Math.floor(Math.random() * opts.length)];
 }
 
+// ── Quiz mode ──
+const BOT_QUIZ_QUESTIONS = [
+  { q: "What does ACID stand for in databases?", a: "**A**tomicity, **C**onsistency, **I**solation, **D**urability — the four guarantees of a reliable database transaction.", tag: "acid" },
+  { q: "What is the difference between a fact table and a dimension table?", a: "**Fact table** stores measurable events (orders, transactions) with foreign keys and numeric measures. **Dimension table** stores descriptive attributes (customer name, product category) used to filter and group facts.", tag: "star-schema" },
+  { q: "What does idempotency mean for a data pipeline?", a: "An idempotent pipeline produces the same result no matter how many times it runs. Running it 1x or 10x = identical output. Achieved with TRUNCATE+INSERT or MERGE/UPSERT patterns.", tag: "idempotency" },
+  { q: "What is the difference between ETL and ELT?", a: "**ETL**: transform data before loading (old approach, separate compute layer). **ELT**: load raw data first, transform inside the warehouse using SQL/dbt (modern cloud approach).", tag: "etl-elt" },
+  { q: "What SQL clause would you use to filter aggregated results?", a: "**HAVING** — it filters after GROUP BY aggregation. WHERE filters rows before aggregation. Example: `HAVING COUNT(*) > 5`", tag: "group-by-having" },
+  { q: "What is window function PARTITION BY equivalent to conceptually?", a: "PARTITION BY is like GROUP BY but **doesn't collapse rows**. It resets the window calculation for each group while keeping all rows in the output.", tag: "window-functions" },
+  { q: "What is the difference between RANK() and DENSE_RANK()?", a: "**RANK()**: leaves gaps after ties (1,2,2,4). **DENSE_RANK()**: no gaps (1,2,2,3). ROW_NUMBER() always gives unique numbers regardless of ties.", tag: "window-functions" },
+  { q: "What is a CTE and when would you use one over a subquery?", a: "**CTE (Common Table Expression)** = named temporary result defined with WITH. Use over subquery when: (1) you need to reference it multiple times, (2) query is complex and readability matters, (3) you want to debug each step.", tag: "ctes-advanced" },
+  { q: "What does Spark's lazy evaluation mean?", a: "Spark doesn't execute transformations immediately. It builds an execution plan (DAG) and only runs it when an **action** is called (collect, write, count). This allows Catalyst optimizer to reorder and optimize operations.", tag: "spark-lazy" },
+  { q: "What is the Bronze/Silver/Gold (Medallion) architecture?", a: "**Bronze**: raw data as-is from source. **Silver**: cleaned, validated, typed. **Gold**: aggregated, business-ready tables for dashboards/analytics. Each layer adds quality and removes detail.", tag: "pipeline-phases" },
+  { q: "How does incremental loading work? What is a watermark?", a: "Incremental loading only processes new/changed records since last run. A **watermark** is the timestamp of the last successful run — used in `WHERE updated_at > last_watermark` to fetch only new rows.", tag: "incremental-loading" },
+  { q: "What is schema drift and how do you handle it?", a: "Schema drift = unexpected source schema change (column added/removed/renamed). Handle by: (1) validating schema before loading, (2) using SELECT explicit columns (not SELECT *), (3) alerting on column count/type changes.", tag: "schema-evolution" },
+  { q: "What is the difference between a data lake and a data warehouse?", a: "**Data lake**: raw files in object storage (S3/GCS), any format, schema-on-read, cheap. **Data warehouse**: structured, curated, schema-on-write, SQL-queryable, fast analytics. Lakehouse (Delta/Iceberg) combines both.", tag: "data-warehouse" },
+  { q: "What SQL keyword prevents duplicate rows when inserting existing data?", a: "**ON CONFLICT DO UPDATE** (PostgreSQL UPSERT) or **MERGE** statement. Example: `INSERT INTO ... ON CONFLICT (id) DO UPDATE SET col = EXCLUDED.col`", tag: "merge-upsert" },
+  { q: "What does dbt's ref() function do?", a: "`{{ ref('model_name') }}` references another dbt model and automatically handles dependencies. dbt builds models in the correct order based on ref() calls and replaces it with the actual table name at runtime.", tag: "dbt-basics" },
+  { q: "What are the 6 dimensions of data quality?", a: "**Completeness** (no nulls), **Uniqueness** (no duplicates), **Validity** (values in range), **Consistency** (same across systems), **Timeliness** (data arrives on schedule), **Accuracy** (reflects reality).", tag: "data-quality" },
+  { q: "What is the difference between a Seq Scan and Index Scan in EXPLAIN?", a: "**Seq Scan**: reads entire table row by row (bad for large tables). **Index Scan**: uses an index to jump directly to matching rows (good for selective queries). See Seq Scan on large tables → add an index.", tag: "query-performance" },
+  { q: "What does CDC stand for and how is it different from polling?", a: "**Change Data Capture** — reads the database transaction log (WAL) to capture every change in real time. Unlike polling (watermark queries), CDC: catches DELETEs, has sub-second latency, puts near-zero load on source.", tag: "cdc-debezium" },
+];
+
+let BOT_QUIZ_IDX = null; // current active quiz question index
+let BOT_QUIZ_PENDING = null; // question awaiting answer check
+
+function handleQuiz(subject, tokens) {
+  // Filter questions by topic if subject given
+  let pool = BOT_QUIZ_QUESTIONS;
+  if (subject && subject.length > 2) {
+    const filtered = pool.filter(q =>
+      q.q.toLowerCase().includes(subject) ||
+      q.tag.includes(subject) ||
+      tokens.some(t => q.tag.includes(t) || q.q.toLowerCase().includes(t))
+    );
+    if (filtered.length > 0) pool = filtered;
+  }
+  // Pick random question not recently asked
+  const q = pool[Math.floor(Math.random() * pool.length)];
+  BOT_QUIZ_PENDING = q;
+  return `**Quiz time! 🎯**\n\n${q.q}\n\n*Think about it, then type "answer" or "show answer" to see the model answer.*\n*Type "next" for another question, or ask about "${q.tag}" for a full explanation.*`;
+}
+
 // Build follow-up prompt suggestions based on the last entry
 function followUpSuggestions(entry) {
   if (!entry) return '';
@@ -3387,6 +3461,18 @@ function botRespond(userInput) {
     return greetings[Math.floor(Math.random() * greetings.length)];
   }
 
+  // ── Quiz answer reveal ──
+  if (/^(answer|show answer|give answer|reveal|i give up|solution)$/i.test(lower) && BOT_QUIZ_PENDING) {
+    const q = BOT_QUIZ_PENDING;
+    BOT_QUIZ_PENDING = null;
+    return `**Answer:**\n\n${q.a}\n\n---\nType **"quiz ${q.tag}"** for more questions on this topic, or ask me to explain **"${q.tag}"** in detail.`;
+  }
+
+  // ── Quiz next question ──
+  if (/^(next|next question|another|another question|more questions?)$/i.test(lower)) {
+    return handleQuiz('', []);
+  }
+
   // ── Thanks ──
   if (intent === 'thanks') {
     const base = BOT_LAST_ENTRY
@@ -3400,9 +3486,20 @@ function botRespond(userInput) {
     return `Here's everything I can explain — ask naturally ("what is X", "how to X", "explain X", "difference between X and Y"):\n\n**Core DE Concepts:**\nETL vs ELT · Data Pipeline Phases · Incremental Loading · Idempotency · ACID · Data Quality · Data Modeling · Star/Snowflake Schema · SCD Types · Medallion Architecture · Normalization · Parquet · Data Warehouse · Kafka\n\n**SQL:**\nJOINs · Window Functions (RANK, LAG, LEAD, running totals) · CTEs · Recursive CTEs · GROUP BY/HAVING · Subqueries · NULL Handling · Indexes · EXPLAIN · Views · Materialized Views · MERGE/UPSERT · Stored Procedures\n\n**Python for DE:**\nEnvironment setup · pandas · psycopg2/SQLAlchemy · REST APIs · Error Handling · Generators · Decorators · Context Managers · File I/O\n\n**Tools & Frameworks:**\nAirflow (DAGs · XComs · Scheduling · Backfill) · PySpark (Lazy eval · Partitions · Skew) · dbt (Models · Tests · ref()) · Docker · Git\n\n**Career:**\nJob search strategy · Portfolio projects · Interview prep · Skills roadmap\n\nWhat would you like to dive into?`;
   }
 
-  // ── Follow-up: use last topic context ──
-  if (intent === 'followup' && BOT_LAST_ENTRY) {
-    return `Here's more on **${BOT_LAST_ENTRY.title}**:\n\n${BOT_LAST_ENTRY.answer}${relatedTopics(BOT_LAST_ENTRY.id)}`;
+  // ── Follow-up: use history context ──
+  if (intent === 'followup') {
+    if (BOT_LAST_ENTRY) {
+      return `Here's more on **${BOT_LAST_ENTRY.title}**:\n\n${BOT_LAST_ENTRY.answer}${relatedTopics(BOT_LAST_ENTRY.id)}`;
+    }
+    if (BOT_HISTORY.length > 0) {
+      const recent = BOT_HISTORY[0];
+      return `Continuing from **${recent.title}**:\n\n${recent.answer}${relatedTopics(recent.id)}`;
+    }
+  }
+
+  // ── Quiz intent ──
+  if (intent === 'quiz') {
+    return handleQuiz(subject, tokens);
   }
 
   // ── Main search: hand-crafted KB ──
@@ -3415,6 +3512,7 @@ function botRespond(userInput) {
     const best = kbScores[0].entry;
     BOT_LAST_TOPIC = best.id;
     BOT_LAST_ENTRY = best;
+    pushHistory(best);
     const intro = intentIntro(intent, best.title);
     return (intro || '') + best.answer + relatedTopics(best.id);
   }
@@ -3426,11 +3524,12 @@ function botRespond(userInput) {
     return formatPlatformResult(platformResults[0], intent);
   }
 
-  // ── Weak KB match (score 3-5): still answer but note it's a partial match ──
+  // ── Weak KB match (score 3-5) ──
   if (kbScores.length > 0 && kbScores[0].score >= 3) {
     const best = kbScores[0].entry;
     BOT_LAST_TOPIC = best.id;
     BOT_LAST_ENTRY = best;
+    pushHistory(best);
     const intro = intentIntro(intent, best.title);
     return (intro || '') + best.answer + relatedTopics(best.id);
   }
@@ -3449,7 +3548,7 @@ function botRespond(userInput) {
 
   if (topMatches.length > 0) {
     const suggestions = topMatches.map(x => `- "${x.entry.title}"`).join('\n');
-    return `I'm not 100% sure what you're asking — but based on your question, you might be looking for one of these:\n\n${suggestions}\n\nTry asking: "explain [topic]" or "how does [topic] work?" — and I'll give you a full breakdown. Type **help** for everything I can cover.`;
+    return `I'm not 100% sure what you're asking — but based on your question, you might mean one of these:\n\n${suggestions}\n\nTry asking: "explain [topic]" or "how does [topic] work?". Type **help** for the full topic map.`;
   }
 
   return `I didn't quite catch that — could you rephrase?\n\nTry:\n- "What is [concept]?"\n- "How does [tool] work?"\n- "Difference between X and Y?"\n- "Give me an example of [topic]"\n\nType **help** to see my full topic map.`;

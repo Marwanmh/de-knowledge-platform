@@ -3098,6 +3098,30 @@ mark {
   font-size: 12px;
 }
 
+/* Collapsible long answers */
+.bot-bubble-inner {
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+.bot-bubble-inner.bot-bubble-collapsed {
+  max-height: 320px;
+  mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+}
+.bot-expand-btn {
+  display: block;
+  margin: 8px auto 0;
+  background: transparent;
+  border: 1px solid rgba(139,92,246,0.3);
+  color: var(--purple-light);
+  font-size: 12px;
+  padding: 4px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.bot-expand-btn:hover { background: rgba(139,92,246,0.12); }
+
 /* Bot markdown elements */
 .bot-p {
   margin: 0 0 10px 0;

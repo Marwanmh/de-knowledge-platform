@@ -1289,18 +1289,37 @@ function buildBot() {
     }
   }
 
+  const COLLAPSE_THRESHOLD = 900; // chars — answers longer than this get a "Show more"
+
   function addMessage(text, role) {
     const wrap = document.createElement('div');
     wrap.className = `bot-msg bot-msg-${role}`;
     const bubble = document.createElement('div');
     bubble.className = 'bot-bubble';
-    bubble.innerHTML = renderMarkdown(text);
+
+    if (role === 'bot' && text.length > COLLAPSE_THRESHOLD) {
+      const inner = document.createElement('div');
+      inner.className = 'bot-bubble-inner bot-bubble-collapsed';
+      inner.innerHTML = renderMarkdown(text);
+      const toggle = document.createElement('button');
+      toggle.className = 'bot-expand-btn';
+      toggle.textContent = 'Show more ▾';
+      toggle.addEventListener('click', () => {
+        const collapsed = inner.classList.toggle('bot-bubble-collapsed');
+        toggle.textContent = collapsed ? 'Show more ▾' : 'Show less ▴';
+        if (!collapsed) messagesEl.scrollTop = wrap.offsetTop - 20;
+      });
+      bubble.appendChild(inner);
+      bubble.appendChild(toggle);
+      addCopyButtons(inner);
+    } else {
+      bubble.innerHTML = renderMarkdown(text);
+      if (role === 'bot') addCopyButtons(bubble);
+    }
+
     wrap.appendChild(bubble);
     messagesEl.appendChild(wrap);
-    if (role === 'bot') {
-      addCopyButtons(bubble);
-      updateSuggestions(text);
-    }
+    if (role === 'bot') updateSuggestions(text);
     // Only auto-scroll if user is near bottom (within 120px)
     const nearBottom = messagesEl.scrollHeight - messagesEl.scrollTop - messagesEl.clientHeight < 120;
     if (nearBottom || role === 'user') messagesEl.scrollTop = messagesEl.scrollHeight;
