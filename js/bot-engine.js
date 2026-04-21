@@ -10,7 +10,7 @@ const BOT_KB = [
   // ============================================================
   {
     id: 'what-is-de',
-    keywords: ['what','data engineering','data engineer','de','role','job','career','become'],
+    keywords: ['data engineering','data engineer','role','job','career','become','what is data engineering','what is de'],
     title: 'What is Data Engineering?',
     answer: `Data Engineering is the job of building and maintaining the systems that move, store, and transform data so analysts and data scientists can use it.
 
@@ -76,7 +76,7 @@ Interviewers ask "how would you design a pipeline?" — always describe these 3 
   },
   {
     id: 'idempotency',
-    keywords: ['idempotent','idempotency','safe to rerun','rerun','duplicate','run twice'],
+    keywords: ['idempotent','idempotency','safe to rerun','rerun','duplicate','run twice','pipeline idempotency','idempotent pipeline'],
     title: 'Idempotency',
     answer: `An idempotent pipeline produces the same result no matter how many times you run it. Running it once or running it 10 times gives identical output.
 
@@ -306,7 +306,7 @@ Memorizing definitions without understanding when and why to use something. Inte
   // ============================================================
   {
     id: 'sql-joins',
-    keywords: ['join','inner join','left join','right join','full outer','cross join','joins','joining tables'],
+    keywords: ['sql','join','inner join','left join','right join','full outer','cross join','joins','joining tables','sql query','sql basics','structured query'],
     title: 'SQL JOINs Explained',
     answer: `JOINs combine rows from two tables based on a related column. They are the most tested SQL concept in DE interviews.
 
@@ -430,7 +430,7 @@ FROM orders;
   },
   {
     id: 'null-handling',
-    keywords: ['null','is null','coalesce','nullif','null handling','missing','empty'],
+    keywords: ['null','is null','coalesce','nullif','null handling','missing','empty','nulls','null values','missing values','nan','missing data','none','handle nulls','deal with nulls'],
     title: 'NULL Handling in SQL',
     answer: `NULL means "unknown" or "missing" — not zero, not empty string. NULLs behave unexpectedly if you don't know the rules.
 
@@ -471,7 +471,7 @@ FROM customers;
   },
   {
     id: 'indexes',
-    keywords: ['index','indexes','b-tree','explain','seq scan','query plan','slow query','performance','optimize'],
+    keywords: ['index','indexes','b-tree','create index','index type','gin index','gist index','hash index','btree','composite index','covering index','index scan','missing index'],
     title: 'Indexes and Query Performance',
     answer: `An index lets the database find rows without scanning the entire table. Like a book's index — jump straight to the page instead of reading every page.
 
@@ -604,7 +604,7 @@ Materialized views are the database-native equivalent of dbt incremental models.
   },
   {
     id: 'merge-upsert',
-    keywords: ['merge','upsert','insert on conflict','on duplicate key','upsert pattern','update or insert'],
+    keywords: ['merge','upsert','insert on conflict','on duplicate key','upsert pattern','update or insert','postgres upsert','upsert postgres','upsert in postgres','postgresql upsert','sql upsert','upsert sql'],
     title: 'MERGE / UPSERT Pattern',
     answer: `MERGE (also called UPSERT) inserts a row if it doesn't exist, or updates it if it does. This is the foundation of idempotent pipelines.
 
@@ -690,7 +690,7 @@ CALL refresh_daily_stats();
   // ============================================================
   {
     id: 'python-setup',
-    keywords: ['venv','virtual environment','pip','requirements','setup','install','python setup','env'],
+    keywords: ['python','venv','virtual environment','pip','requirements','setup','install','python setup','env','python environment','python for data','getting started python'],
     title: 'Python Setup for DE Projects',
     answer: `Always use a virtual environment. Never install packages globally — different projects need different versions.
 
@@ -920,7 +920,7 @@ except requests.exceptions.HTTPError as e:
   },
   {
     id: 'python-error-handling',
-    keywords: ['error handling','try except','exception','logging','try','except','finally','errors'],
+    keywords: ['error handling','try except','exception','logging','try','except','finally','errors','handle errors','python errors','exception handling','python debug','pipeline errors','catch errors'],
     title: 'Error Handling and Logging in Python',
     answer: `Production pipelines must catch errors gracefully and log everything. Silent failures are the worst kind — your pipeline "ran" but loaded garbage data.
 
@@ -1505,7 +1505,7 @@ AS SELECT * FROM ...;
   {
     id: 'etl-elt',
     title: 'ETL vs ELT',
-    keywords: ['etl','elt','extract transform load','extract load transform','etl vs elt','pipeline','data pipeline','transformation','loading data','ingestion'],
+    keywords: ['etl','elt','extract transform load','extract load transform','etl vs elt','etl pipeline','transformation','loading data','ingestion','etl elt difference'],
     related: ['airflow-basics','dbt-basics','data-warehouse'],
     answer: `**ETL** = Extract → Transform → Load (transform *before* loading into warehouse)
 **ELT** = Extract → Load → Transform (load raw first, transform *inside* the warehouse)
@@ -1549,7 +1549,7 @@ Fivetran/Airbyte → loads raw to BigQuery → dbt transforms inside BigQuery
   {
     id: 'debugging-pipelines',
     title: 'Debugging Data Pipelines',
-    keywords: ['debug','debugging','pipeline failed','airflow error','pipeline error','troubleshoot','fix pipeline','task failed','dag failed','error handling','retry','backfill','idempotent'],
+    keywords: ['debug','debugging','pipeline failed','airflow error','pipeline error','troubleshoot','fix pipeline','task failed','dag failed','error handling','retry','backfill','idempotent','failing','broken','crash','crashed','stuck','pipeline failure','not working','something wrong','pipeline down','my pipeline','airflow crash','airflow debug','airflow down','dag crash','dag error','airflow failing','dag crashed','pipeline crashed'],
     related: ['airflow-basics','airflow-xcoms','python-error-handling'],
     answer: `**Debugging data pipelines** is a core DE skill. Most failures fall into a few categories.
 
@@ -1913,7 +1913,7 @@ def fetch_in_batches(cursor, query, batch_size=5000):
   {
     id: 'python-decorators',
     title: 'Python Decorators',
-    keywords: ['decorator','decorators','@','wrapper','functools','timing','retry','logging decorator','wraps','higher order function','closure'],
+    keywords: ['decorator','decorators','python decorator','python decorators','@','wrapper','functools','timing','retry','logging decorator','wraps','higher order function','closure'],
     related: ['python-setup','python-error-handling','airflow-basics'],
     answer: `**Decorators** wrap a function to add behavior before/after it runs — used heavily in Airflow, FastAPI, and DE tooling.
 
@@ -2179,7 +2179,7 @@ docs: add README for pipeline setup
   {
     id: 'career-de',
     title: 'Data Engineering Career Guide',
-    keywords: ['career','job','interview','data engineer job','junior de','portfolio','resume','skills needed','what to learn','roadmap','hiring','salary','data engineer skills','job search'],
+    keywords: ['career','job','interview','data engineer job','junior de','portfolio','resume','skills needed','what to learn','roadmap','hiring','salary','data engineer skills','job search','get a job','find a job','get hired','become a data engineer','land a job','junior data engineer','entry level','job hunt'],
     related: ['data-pipeline','airflow-basics','dbt-basics'],
     answer: `**Breaking into Data Engineering** — what actually matters for junior roles.
 
@@ -2533,7 +2533,7 @@ df_yesterday = spark.read.format("delta") \
   {
     id: 'dbt-advanced',
     title: 'dbt Advanced — Macros, Snapshots & Hooks',
-    keywords: ['dbt macro','dbt snapshot','dbt hook','dbt test','dbt source','dbt seed','dbt incremental','dbt vars','jinja','dbt advanced','dbt package','dbt utils','dbt generic test'],
+    keywords: ['dbt macro','dbt macros','macro','macros','dbt snapshot','dbt hook','dbt test advanced','dbt source','dbt seed','dbt incremental','dbt vars','jinja','dbt advanced','dbt package','dbt utils','dbt generic test'],
     related: ['dbt-basics','ctes-advanced','data-quality'],
     answer: `**dbt advanced patterns** that separate junior from senior DE work.
 
@@ -2675,7 +2675,7 @@ EXPLAIN SELECT * FROM orders WHERE customer_id = 123;
   {
     id: 'testing-pipelines',
     title: 'Testing Data Pipelines',
-    keywords: ['test pipeline','unit test','integration test','pytest','testing','test data','mock','fixture','pipeline test','data test','test driven','tdd','test airflow','test transformation'],
+    keywords: ['test','testing','test pipeline','unit test','integration test','pytest','test data','mock','fixture','pipeline test','data test','test driven','tdd','test airflow','test transformation','how to test','pipeline testing','test data pipeline'],
     related: ['data-quality','debugging-pipelines','dbt-basics'],
     answer: `**Testing data pipelines** ensures transforms are correct and catches regressions before they reach production.
 
@@ -2997,7 +2997,7 @@ save_watermark(datetime.utcnow())
   {
     id: 'query-performance',
     title: 'SQL Query Performance & EXPLAIN',
-    keywords: ['query performance','slow query','explain','explain analyze','query plan','seq scan','index scan','vacuum','analyze','query optimization','execution plan','cost estimate','nested loop','hash join','full table scan'],
+    keywords: ['query performance','slow query','explain','explain analyze','query plan','seq scan','index scan','vacuum','analyze','query optimization','execution plan','cost estimate','nested loop','hash join','full table scan','postgresql explain','postgres explain','explain postgres','postgresql','explain postgres query'],
     related: ['indexes','normalization','cost-optimization'],
     answer: `**EXPLAIN** shows the database's execution plan — how it will run your query, what indexes it uses, and estimated cost.
 
@@ -3078,10 +3078,10 @@ const BOT_SYNONYMS = {
   'difference between':'vs','compare':'vs','vs':'vs','versus':'vs','better':'vs',
   'give me an example':'example','show me an example':'example','example of':'example','code for':'example',
   'why':'why','why is':'why','why do':'why','why does':'why','when to use':'why','when should':'why',
-  'debug':'debug','fix':'debug','error':'debug','problem':'debug','issue':'debug','not working':'debug',
+  'debug':'debug','fix':'debug','error':'debug','problem':'debug','issue':'debug','not working':'debug','failing':'debug','broken':'debug','stuck':'debug','crashed':'debug',
   'best practice':'howto','best way':'howto',
   // DE terms
-  'data eng':'data engineering','de ':'data engineering','data pipeline':'pipeline',
+  'data eng':'data engineering','data pipeline':'pipeline',
   'incremental':'incremental loading','watermark':'incremental loading',
   'idempotent':'idempotency','safe to rerun':'idempotency',
   'star':'star schema','fact':'star schema','dimension':'star schema',
@@ -3126,25 +3126,59 @@ const BOT_INTENTS = [
   { type: 'help',        re: /^(help|what can you|what do you know|topics|commands|list topics)\b/i },
   { type: 'followup',    re: /^(more|more detail|elaborate|expand|go on|continue|tell me more|and|also|what about|but why|but how)\b/i },
   { type: 'example',     re: /\b(example|code|snippet|show me|demonstrate|sample)\b/i },
-  { type: 'vs',          re: /\bvs\.?\b|\bversus\b|\bdifference between\b|\bcompare\b|\bwhich is better\b/i },
+  { type: 'vs',          re: /\bvs\.?\b|\bversus\b|\bdifference between\b|\bdifferent from\b|\bcompare\b|\bwhich is better\b/i },
   { type: 'howto',       re: /\bhow (to|do|can|does|did|would|should)\b|\bbest (way|practice)\b|\bsteps\b/i },
   { type: 'why',         re: /\bwhy\b|\bwhen (to|should|would)\b|\bpurpose\b|\breason\b|\bbenefit\b/i },
   { type: 'define',      re: /\b(what is|what are|what's|what does|define|explain|describe|tell me about)\b/i },
-  { type: 'quiz',        re: /\b(quiz|test me|practice|question|ask me|challenge me|drill)\b/i },
+  { type: 'quiz',        re: /\b(quiz|test me|ask me a question|challenge me|drill|practice questions?|let me practice)\b/i },
 ];
 
 // --- Conversation memory ---
 let BOT_LAST_TOPIC = null;   // last matched KB entry id
 let BOT_LAST_ENTRY = null;   // last matched KB entry object
 const BOT_HISTORY  = [];     // last 5 matched entries (most recent first)
+const BOT_EXCHANGE = [];     // full conversation: [{role:'user'|'bot', text, entry, intent}]
+const BOT_ASPECTS  = {};     // {entryId: Set of aspects shown: 'full','example','why','how'}
 
 function pushHistory(entry) {
   if (!entry) return;
-  // Remove if already in history, then push to front
   const idx = BOT_HISTORY.findIndex(e => e.id === entry.id);
   if (idx !== -1) BOT_HISTORY.splice(idx, 1);
   BOT_HISTORY.unshift(entry);
   if (BOT_HISTORY.length > 5) BOT_HISTORY.pop();
+}
+
+function recordExchange(userText, botText, entry, intent) {
+  BOT_EXCHANGE.push({ role: 'user', text: userText });
+  BOT_EXCHANGE.push({ role: 'bot',  text: botText, entryId: entry ? entry.id : null, intent });
+  if (BOT_EXCHANGE.length > 30) BOT_EXCHANGE.splice(0, 2); // keep last 15 turns
+}
+
+function markAspect(entryId, aspect) {
+  if (!BOT_ASPECTS[entryId]) BOT_ASPECTS[entryId] = new Set();
+  BOT_ASPECTS[entryId].add(aspect);
+}
+
+function hasSeenAspect(entryId, aspect) {
+  return BOT_ASPECTS[entryId] && BOT_ASPECTS[entryId].has(aspect);
+}
+
+function getLastUserMessages(n) {
+  return BOT_EXCHANGE.filter(m => m.role === 'user').slice(-n).map(m => m.text);
+}
+
+function getConversationTopicChain() {
+  // Returns last 3 unique entry titles discussed, most recent first
+  const seen = [];
+  for (let i = BOT_EXCHANGE.length - 1; i >= 0; i--) {
+    const m = BOT_EXCHANGE[i];
+    if (m.role === 'bot' && m.entryId && !seen.find(e => e.id === m.entryId)) {
+      const entry = BOT_KB.find(e => e.id === m.entryId);
+      if (entry) seen.push(entry);
+      if (seen.length >= 3) break;
+    }
+  }
+  return seen;
 }
 
 function detectIntent(text) {
@@ -3158,7 +3192,8 @@ function detectIntent(text) {
 function expandSynonyms(text) {
   let t = text.toLowerCase();
   Object.entries(BOT_SYNONYMS).forEach(([from, to]) => {
-    t = t.replace(new RegExp(from.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'), 'gi'), ' ' + to + ' ');
+    const escaped = from.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    t = t.replace(new RegExp('\\b' + escaped + '\\b', 'gi'), ' ' + to + ' ');
   });
   return t;
 }
@@ -3177,18 +3212,86 @@ function editDistance(a, b) {
 // Returns true if token fuzzy-matches a keyword (typo-tolerant)
 function fuzzyMatch(token, keyword) {
   if (token.length < 4) return token === keyword;
-  if (keyword.includes(token) || token.includes(keyword)) return true;
-  const threshold = token.length <= 6 ? 1 : 2;
+  if (keyword.includes(token)) return true;
+  // Only count token.includes(keyword) when keyword is long enough (avoids 'pr' matching 'sprak')
+  if (token.includes(keyword) && keyword.length >= Math.max(3, token.length - 2)) return true;
+  const threshold = token.length <= 4 ? 1 : 2;
   return editDistance(token, keyword) <= threshold;
 }
 
 function botTokenize(text) {
   const expanded = expandSynonyms(text);
-  return expanded
+  const tokens = expanded
     .replace(/[^\w\s]/g, ' ')
     .split(/\s+/)
     .map(w => w.trim())
     .filter(w => w.length > 1 && !BOT_STOP.has(w));
+  return [...new Set(tokens)];
+}
+
+// ── Section extractor: pull the most relevant chunk from an answer ──
+// Returns a focused slice of answer.answer based on what was asked.
+function extractSection(answer, tokens, intent, hint) {
+  // Split into semantic paragraphs
+  const paras = answer.split(/\n\n+/).filter(p => p.trim().length > 20);
+  if (paras.length <= 2) return answer; // short answer — return whole thing
+
+  // For example intent: return code block + preceding context
+  if (intent === 'example' || hint === 'example') {
+    const codeIdx = paras.findIndex(p => p.includes('```'));
+    if (codeIdx !== -1) {
+      const start = Math.max(0, codeIdx - 1);
+      const end   = Math.min(paras.length, codeIdx + 3);
+      return paras.slice(start, end).join('\n\n');
+    }
+  }
+
+  // For why intent: find sections with benefit/importance language
+  if (intent === 'why' || hint === 'why') {
+    const whyIdx = paras.findIndex(p => /\b(why|benefit|important|matter|because|reason|use case|when to|advantage)\b/i.test(p));
+    if (whyIdx !== -1) {
+      return paras.slice(whyIdx, Math.min(paras.length, whyIdx + 3)).join('\n\n');
+    }
+  }
+
+  // For howto intent: find numbered steps or step-by-step sections
+  if (intent === 'howto' || hint === 'howto') {
+    const stepIdx = paras.findIndex(p => /step|^\d+\.|how to|to use|to set/i.test(p));
+    if (stepIdx !== -1) {
+      return paras.slice(stepIdx, Math.min(paras.length, stepIdx + 3)).join('\n\n');
+    }
+  }
+
+  // For vs intent: find comparison tables or vs language
+  if (intent === 'vs' || hint === 'vs') {
+    const vsIdx = paras.findIndex(p => /vs\.|versus|differ|compare|\|\s*\w/i.test(p));
+    if (vsIdx !== -1) {
+      return paras.slice(Math.max(0, vsIdx - 1), Math.min(paras.length, vsIdx + 3)).join('\n\n');
+    }
+  }
+
+  // General: score paragraphs by token relevance, return top 3 contiguous
+  const scores = paras.map((p, i) => {
+    const lower = p.toLowerCase();
+    const s = tokens.reduce((acc, t) => acc + (lower.includes(t) ? 2 : 0), 0)
+              + (lower.includes('**') ? 1 : 0); // bold headers = more relevant
+    return { i, score: s };
+  });
+  const bestIdx = scores.sort((a,b) => b.score - a.score)[0].i;
+  return paras.slice(Math.max(0, bestIdx), Math.min(paras.length, bestIdx + 3)).join('\n\n');
+}
+
+// Detect what ASPECT the user is asking about in a follow-up
+function detectFollowupAspect(raw) {
+  const lower = raw.toLowerCase();
+  if (/\bwhy\b|\bwhy is\b|\bbenefit|\bimportant\b|\buse case\b/i.test(lower)) return 'why';
+  if (/\bexample\b|\bshow me\b|\bcode\b|\bsample\b|\bdemonstrate\b/i.test(lower)) return 'example';
+  if (/\bhow\b.*\bwork|\bunder the hood\b|\bmechanism\b|\bstep by step\b/i.test(lower)) return 'howto';
+  if (/\bvsb|\bcompare\b|\bdifference\b|\bvs\b/i.test(lower)) return 'vs';
+  if (/\bin practice\b|\breal.world\b|\bproduction\b|\bactually\b/i.test(lower)) return 'example';
+  if (/\bpython\b/i.test(lower)) return 'python';
+  if (/\bsql\b/i.test(lower)) return 'sql';
+  return null;
 }
 
 // Extract the core subject from a question
@@ -3196,7 +3299,12 @@ function botTokenize(text) {
 // e.g. "how do I connect python to postgres?" → "connect python postgres"
 function extractSubject(text) {
   return text.toLowerCase()
-    .replace(/^(what is|what are|explain|describe|tell me about|how to|how do i|how does|why is|why do|what's|define)\s+/i, '')
+    .replace(/^(what is|what are|what does|what do|explain|describe|tell me about|how to|how do i|how does|why is|why do|what's|define|show me|give me)\s+/i, '')
+    .replace(/\s+for\s+(data\s*engineering|de\b|a\s+data\s+engineer)/i, '')
+    .replace(/\s+in\s+(data\s*engineering|de\b)/i, '')
+    .replace(/\bdata\s+engineering\s+(job|career|role|interview|roadmap|field|industry)\b/i, '$1')
+    .replace(/\s+in\s+data\s+pipeline(s)?\b/i, '')
+    .replace(/\s+for\s+data\s+pipeline(s)?\b/i, '')
     .replace(/[?.!]$/, '')
     .trim();
 }
@@ -3211,10 +3319,11 @@ function scoreKB(entry, tokens, subject, intent) {
 
   // Keyword phrase match (exact + fuzzy)
   entry.keywords.forEach(kw => {
-    if (subject && subject.includes(kw)) score += 12;
+    if (subject && kw.length >= 2 && new RegExp('\\b' + kw.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + '\\b').test(subject)) score += 12;
     tokens.forEach(t => {
       if (kw === t) score += 6;
-      else if (kw.includes(t) || t.includes(kw)) score += 3;
+      else if (kw.includes(' ') && kw.includes(t)) score += 1;  // multi-word kw partial: low score
+      else if (!kw.includes(' ') && kw.length >= 3 && (kw.includes(t) || (t.length >= 3 && t.includes(kw)))) score += 3;
       else if (t.length >= 4 && fuzzyMatch(t, kw)) score += 2;  // typo tolerance
     });
   });
@@ -3384,17 +3493,75 @@ function formatPlatformResult(result, intent) {
 }
 
 // Intent-aware intro phrases
-function intentIntro(intent, title) {
+// Returns the relationship between two KB entries (used for bridging)
+function getTopicRelation(fromEntry, toEntry) {
+  if (!fromEntry || !toEntry) return null;
+  // Check if fromEntry's related topics include toEntry
+  const rel = {
+    'etl-elt':            ['incremental-loading','pipeline-phases','data-warehouse','dbt-basics','cdc-debezium'],
+    'incremental-loading':['idempotency','watermark','etl-elt','cdc-debezium','airflow-basics'],
+    'idempotency':        ['incremental-loading','etl-elt','merge-upsert','airflow-basics'],
+    'pipeline-phases':    ['etl-elt','data-warehouse','incremental-loading','dbt-basics'],
+    'data-warehouse':     ['star-schema','data-modeling','etl-elt','delta-iceberg'],
+    'airflow-basics':     ['debugging-pipelines','airflow-xcoms','python-setup','docker-basics'],
+    'spark-basics':       ['spark-lazy','python-pandas','delta-iceberg','kafka-basics'],
+    'dbt-basics':         ['sql-joins','ctes-advanced','data-warehouse','data-quality'],
+    'sql-joins':          ['ctes-advanced','window-functions','null-handling','indexes'],
+    'window-functions':   ['sql-joins','ctes-advanced','group-by-having'],
+    'python-setup':       ['python-pandas','python-postgres','python-error-handling'],
+    'python-error-handling':['debugging-pipelines','python-setup','testing-pipelines'],
+    'debugging-pipelines':['airflow-basics','python-error-handling','testing-pipelines'],
+    'docker-basics':      ['airflow-basics','python-setup','git-for-de'],
+  };
+  const from = rel[fromEntry.id] || [];
+  return from.includes(toEntry.id) ? 'related' : null;
+}
+
+function intentIntro(intent, title, prevEntry) {
+  // Only bridge when topics are actually related (not random topic switches)
+  const isRelated = prevEntry && getTopicRelation(prevEntry, BOT_KB.find(e => e.title === title));
+  const bridge = isRelated ? topicBridge(prevEntry.title, title) : '';
+
   const intros = {
-    define:  [`**${title}** — here's what you need to know:\n\n`, `Let me break down **${title}** for you:\n\n`, `**${title}** explained from the ground up:\n\n`],
-    howto:   [`Here's how to work with **${title}**, step by step:\n\n`, `Let's walk through **${title}**:\n\n`, `Here's the practical approach to **${title}**:\n\n`],
-    why:     [`Here's why **${title}** matters in Data Engineering:\n\n`, `Great question — **${title}** is important because:\n\n`],
-    example: [`Here's a concrete example of **${title}** in action:\n\n`, `Let me show you **${title}** with a real example:\n\n`],
-    vs:      [`**${title}** — let's compare them clearly:\n\n`, `Here's the difference — **${title}**:\n\n`],
+    define:  [
+      `${bridge}**${title}** — here's what you need to know:\n\n`,
+      `${bridge}Let me break down **${title}** for you:\n\n`,
+      `${bridge}**${title}** explained:\n\n`,
+    ],
+    howto:   [
+      `${bridge}Here's how to work with **${title}** in practice:\n\n`,
+      `${bridge}Let's walk through **${title}** step by step:\n\n`,
+      `${bridge}Practical guide to **${title}**:\n\n`,
+    ],
+    why:     [
+      `${bridge}Good question — here's why **${title}** matters:\n\n`,
+      `${bridge}**${title}** is important because:\n\n`,
+    ],
+    example: [
+      `${bridge}Here's **${title}** in action:\n\n`,
+      `${bridge}Real example of **${title}**:\n\n`,
+    ],
+    vs:      [
+      `${bridge}Let's compare — **${title}**:\n\n`,
+      `${bridge}Here's the difference:\n\n`,
+    ],
   };
   const opts = intros[intent];
-  if (!opts) return '';
+  if (!opts) return bridge || '';
   return opts[Math.floor(Math.random() * opts.length)];
+}
+
+// Generate a natural bridge phrase between two topics
+function topicBridge(prevTitle, newTitle) {
+  if (!prevTitle || prevTitle === newTitle) return '';
+  const bridges = [
+    `Since we were just talking about **${prevTitle}**, this connects naturally — `,
+    `Building on **${prevTitle}** — `,
+    `Good progression from **${prevTitle}** — `,
+    `This ties into what we covered with **${prevTitle}**: `,
+    `Coming from **${prevTitle}**, you'll see the connection — `,
+  ];
+  return bridges[Math.floor(Math.random() * bridges.length)];
 }
 
 // ── Quiz mode ──
@@ -3421,28 +3588,43 @@ const BOT_QUIZ_QUESTIONS = [
 
 let BOT_QUIZ_IDX = null; // current active quiz question index
 let BOT_QUIZ_PENDING = null; // question awaiting answer check
+const BOT_QUIZ_RECENT = new Set(); // tracks recently asked question indices to avoid repeats
 
 function handleQuiz(subject, tokens) {
   // Filter questions by topic if subject given
-  let pool = BOT_QUIZ_QUESTIONS;
+  let pool = BOT_QUIZ_QUESTIONS.map((q, i) => ({ q, i }));
   if (subject && subject.length > 2) {
-    const filtered = pool.filter(q =>
+    const filtered = pool.filter(({ q }) =>
       q.q.toLowerCase().includes(subject) ||
       q.tag.includes(subject) ||
       tokens.some(t => q.tag.includes(t) || q.q.toLowerCase().includes(t))
     );
     if (filtered.length > 0) pool = filtered;
   }
-  // Pick random question not recently asked
-  const q = pool[Math.floor(Math.random() * pool.length)];
-  BOT_QUIZ_PENDING = q;
-  return `**Quiz time! 🎯**\n\n${q.q}\n\n*Think about it, then type "answer" or "show answer" to see the model answer.*\n*Type "next" for another question, or ask about "${q.tag}" for a full explanation.*`;
+  // Prefer questions not recently asked
+  const fresh = pool.filter(({ i }) => !BOT_QUIZ_RECENT.has(i));
+  const candidates = fresh.length > 0 ? fresh : pool;
+  // If all asked, reset recent tracking
+  if (fresh.length === 0) BOT_QUIZ_RECENT.clear();
+  const pick = candidates[Math.floor(Math.random() * candidates.length)];
+  BOT_QUIZ_RECENT.add(pick.i);
+  BOT_QUIZ_PENDING = pick.q;
+  return `**Quiz time!**\n\n${pick.q.q}\n\n*Think about it, then type "answer" or "show answer" to see the model answer.*\n*Type "next" for another question, or ask about "${pick.q.tag}" for a full explanation.*`;
 }
 
-// Build follow-up prompt suggestions based on the last entry
+// Build dynamic follow-up suggestions based on what aspects haven't been shown yet
 function followUpSuggestions(entry) {
   if (!entry) return '';
-  return `\n\n---\n*Want to go deeper? Try asking:*\n- "Give me an example of ${entry.title}"\n- "Why is ${entry.title} important?"\n- "How does ${entry.title} work in practice?"`;
+  const aspects = BOT_ASPECTS[entry.id] || new Set();
+  const suggestions = [];
+  if (!aspects.has('example') && entry.answer.includes('```'))
+    suggestions.push(`"Give me a code example of ${entry.title}"`);
+  if (!aspects.has('why'))
+    suggestions.push(`"Why is ${entry.title} important?"`);
+  if (!aspects.has('howto') && !/setup|install/i.test(entry.title))
+    suggestions.push(`"How do I use ${entry.title} in a real pipeline?"`);
+  if (suggestions.length === 0) return '';
+  return `\n\n---\n*Try asking:* ${suggestions.slice(0,2).join(' · ')}`;
 }
 
 function botRespond(userInput) {
@@ -3452,54 +3634,183 @@ function botRespond(userInput) {
   const tokens = botTokenize(raw);
   const subject = extractSubject(raw);
 
+  let response = '';
+
   // ── Greeting ──
   if (intent === 'greeting') {
-    const greetings = [
-      `Hey! Ready to talk Data Engineering.\n\nAsk me anything — I know SQL, Python, Airflow, Spark, dbt, pipeline design, data warehousing, data quality, Kafka, and more.\n\nSome examples to get started:\n- "What is incremental loading?"\n- "How do window functions work?"\n- "Difference between ETL and ELT?"\n- "How do I connect Python to PostgreSQL?"\n- "How do I debug a failing pipeline?"\n\nType **help** to see everything I can explain.`,
-      `Hi! I'm your offline DE Expert — I know this whole platform inside out.\n\nTry asking:\n- "Explain data modeling"\n- "How do I use CTEs?"\n- "What's the difference between Spark and pandas?"\n- "How does Kafka work?"\n\nType **help** for the full topic map.`
-    ];
-    return greetings[Math.floor(Math.random() * greetings.length)];
+    const hasHistory = BOT_EXCHANGE.length > 0;
+    if (hasHistory && BOT_LAST_ENTRY) {
+      response = `Hey again! We were talking about **${BOT_LAST_ENTRY.title}**. Want to continue, or switch topics? Ask me anything.`;
+    } else {
+      const greetings = [
+        `Hey! Ready to talk Data Engineering.\n\nAsk me anything — SQL, Python, Airflow, Spark, dbt, pipelines, data quality, Kafka, and more.\n\nSome good starting questions:\n- "What is incremental loading?"\n- "How do window functions work?"\n- "Difference between ETL and ELT?"\n- "How do I debug a failing pipeline?"\n\nType **help** to see everything I know.`,
+        `Hi! I'm your DE Expert — ask me anything about data engineering.\n\nGood places to start:\n- "Explain the medallion architecture"\n- "How do I use CTEs in SQL?"\n- "What's the difference between Spark and pandas?"\n- "How do I get a data engineering job?"\n\nType **help** for the full topic map.`
+      ];
+      response = greetings[Math.floor(Math.random() * greetings.length)];
+    }
+    recordExchange(raw, response, null, 'greeting');
+    return response;
   }
 
   // ── Quiz answer reveal ──
-  if (/^(answer|show answer|give answer|reveal|i give up|solution)$/i.test(lower) && BOT_QUIZ_PENDING) {
-    const q = BOT_QUIZ_PENDING;
-    BOT_QUIZ_PENDING = null;
-    return `**Answer:**\n\n${q.a}\n\n---\nType **"quiz ${q.tag}"** for more questions on this topic, or ask me to explain **"${q.tag}"** in detail.`;
+  if (/^(answer|show answer|give answer|reveal|i give up|solution)$/i.test(lower)) {
+    if (BOT_QUIZ_PENDING) {
+      const q = BOT_QUIZ_PENDING;
+      BOT_QUIZ_PENDING = null;
+      response = `**Answer:**\n\n${q.a}\n\n---\nType **"quiz ${q.tag}"** for more questions on this topic, or ask me to explain **"${q.tag}"** in detail.`;
+    } else {
+      response = `No active quiz question — type **"quiz me"** or **"quiz me on SQL"** to start one!`;
+    }
+    recordExchange(raw, response, null, 'quiz');
+    return response;
   }
 
   // ── Quiz next question ──
   if (/^(next|next question|another|another question|more questions?)$/i.test(lower)) {
-    return handleQuiz('', []);
+    response = handleQuiz('', []);
+    recordExchange(raw, response, null, 'quiz');
+    return response;
   }
 
   // ── Thanks ──
   if (intent === 'thanks') {
-    const base = BOT_LAST_ENTRY
-      ? `Glad that helped! Here are some natural follow-ups on **${BOT_LAST_ENTRY.title}**:\n- "Give me an example of ${BOT_LAST_ENTRY.title}"\n- "Why does ${BOT_LAST_ENTRY.title} matter?"\n- "How is ${BOT_LAST_ENTRY.title} used in a real pipeline?"`
-      : `Glad I could help! Ask me anything else — SQL, Python, pipelines, tools, or career advice.`;
-    return base;
+    if (BOT_LAST_ENTRY) {
+      const aspects = BOT_ASPECTS[BOT_LAST_ENTRY.id] || new Set();
+      const notYetSeen = [];
+      if (!aspects.has('example') && BOT_LAST_ENTRY.answer.includes('```'))
+        notYetSeen.push(`"Give me a code example"`);
+      if (!aspects.has('why'))
+        notYetSeen.push(`"Why does ${BOT_LAST_ENTRY.title} matter?"`);
+      if (!aspects.has('howto'))
+        notYetSeen.push(`"How do I use this in production?"`);
+      const chain = getConversationTopicChain();
+      const topicsStr = chain.length > 1 ? ` We've covered: ${chain.map(e => e.title).join(', ')}.` : '';
+      response = `Glad that helped!${topicsStr}${notYetSeen.length ? `\n\nMore you can ask:\n${notYetSeen.slice(0,2).map(s => `- ${s}`).join('\n')}` : ''}`;
+    } else {
+      response = `Glad I could help! Ask me anything — SQL, Python, pipelines, tools, or career advice.`;
+    }
+    recordExchange(raw, response, null, 'thanks');
+    return response;
+  }
+
+  // ── Meta-conversation: "how does this connect / relate / tie together?" ──
+  if (/\b(connect|relate|tie|link|similar|same|difference|between them|fit together)\b/i.test(lower) &&
+      /\b(this|that|them|it|these|those|together|each other)\b/i.test(lower) &&
+      BOT_HISTORY.length >= 2) {
+    const chain = getConversationTopicChain();
+    // Try to find a topic mentioned in the query (e.g., "connect to incremental loading")
+    let a = chain[0]; // most recent topic
+    let b = chain[1]; // second most recent
+    // If query names a specific topic, use that as 'b'
+    const namedEntry = BOT_HISTORY.find(e => {
+      const titleTokens = botTokenize(e.title);
+      return titleTokens.some(t => t.length >= 4 && lower.includes(t));
+    });
+    if (namedEntry && namedEntry.id !== a.id) b = namedEntry;
+    const isRel = a && b && (getTopicRelation(b, a) || getTopicRelation(a, b));
+    if (a && b) {
+      const connector = isRel
+        ? `**${b.title}** and **${a.title}** are directly connected in a real pipeline:`
+        : `**${b.title}** and **${a.title}** both matter for DE, though they serve different roles:`;
+      const hint = isRel
+        ? `${b.title} sets up the foundation — ${a.title} depends on it. In a real stack: ${b.title} → provides data/structure → ${a.title} → orchestrates/processes it.`
+        : `${b.title} focuses on one layer (data design/transformation), while ${a.title} handles another (orchestration/tooling). In production you use both.`;
+      response = `${connector}\n\n${hint}\n\nAsk me to go deeper on either one.`;
+      recordExchange(raw, response, null, 'meta');
+      return response;
+    }
   }
 
   // ── Help ──
   if (intent === 'help') {
-    return `Here's everything I can explain — ask naturally ("what is X", "how to X", "explain X", "difference between X and Y"):\n\n**Core DE Concepts:**\nETL vs ELT · Data Pipeline Phases · Incremental Loading · Idempotency · ACID · Data Quality · Data Modeling · Star/Snowflake Schema · SCD Types · Medallion Architecture · Normalization · Parquet · Data Warehouse · Kafka\n\n**SQL:**\nJOINs · Window Functions (RANK, LAG, LEAD, running totals) · CTEs · Recursive CTEs · GROUP BY/HAVING · Subqueries · NULL Handling · Indexes · EXPLAIN · Views · Materialized Views · MERGE/UPSERT · Stored Procedures\n\n**Python for DE:**\nEnvironment setup · pandas · psycopg2/SQLAlchemy · REST APIs · Error Handling · Generators · Decorators · Context Managers · File I/O\n\n**Tools & Frameworks:**\nAirflow (DAGs · XComs · Scheduling · Backfill) · PySpark (Lazy eval · Partitions · Skew) · dbt (Models · Tests · ref()) · Docker · Git\n\n**Career:**\nJob search strategy · Portfolio projects · Interview prep · Skills roadmap\n\nWhat would you like to dive into?`;
+    const chain = getConversationTopicChain();
+    const contextNote = chain.length > 0
+      ? `\nWe've discussed: ${chain.map(e => `**${e.title}**`).join(', ')}. Here's everything else:\n\n`
+      : '\n\n';
+    response = `Here's everything I can explain — ask naturally ("what is X", "how to X", "explain X", "difference between X and Y"):${contextNote}**Core DE Concepts:**\nETL vs ELT · Data Pipeline Phases · Incremental Loading · Idempotency · ACID · Data Quality · Data Modeling · Star/Snowflake Schema · SCD Types · Medallion Architecture · Normalization · Parquet · Data Warehouse · Kafka\n\n**SQL:**\nJOINs · Window Functions (RANK, LAG, LEAD, running totals) · CTEs · Recursive CTEs · GROUP BY/HAVING · Subqueries · NULL Handling · Indexes · EXPLAIN · Views · Materialized Views · MERGE/UPSERT · Stored Procedures\n\n**Python for DE:**\nEnvironment setup · pandas · psycopg2/SQLAlchemy · REST APIs · Error Handling · Generators · Decorators · Context Managers · File I/O\n\n**Tools & Frameworks:**\nAirflow (DAGs · XComs · Scheduling · Backfill) · PySpark (Lazy eval · Partitions · Skew) · dbt (Models · Tests · ref()) · Docker · Git\n\n**Career:**\nJob search strategy · Portfolio projects · Interview prep · Skills roadmap\n\nWhat would you like to dive into?`;
+    recordExchange(raw, response, null, 'help');
+    return response;
   }
 
-  // ── Follow-up: use history context ──
-  if (intent === 'followup') {
-    if (BOT_LAST_ENTRY) {
-      return `Here's more on **${BOT_LAST_ENTRY.title}**:\n\n${BOT_LAST_ENTRY.answer}${relatedTopics(BOT_LAST_ENTRY.id)}`;
+  // ── Follow-up: smart aspect-aware handler ──
+  // Also intercepts 'why', 'example', 'howto' intents when no topic-specific tokens exist
+  const FOLLOWUP_TRIGGER_WORDS = new Set(['more','detail','elaborate','expand','go','on','continue','tell','and','also','about','but','why','how','please','yes','okay','ok','sure','further','deeper','important','matter','use','practice','real','world','work','give','show','see','get','learn','understand','know','need','want','mean','does','used','makes']);
+  // Pronoun-reference detection: "how does IT work", "why do engineers USE IT", "how does THAT fit"
+  const PRONOUN_REF = /\b(it|this|that|these|them)\b/i;
+  const hasPronounRef = PRONOUN_REF.test(lower) && BOT_LAST_ENTRY;
+  // Only block pronoun-followup if query names a SPECIFIC non-generic KB entry's keyword
+  const GENERIC_ENTRY_IDS = new Set(['what-is-de','how-to-start','career-de','interview-tips']);
+  const currentId = BOT_LAST_ENTRY ? BOT_LAST_ENTRY.id : null;
+  const hasNamedTopic = hasPronounRef && BOT_KB.some(e =>
+    !GENERIC_ENTRY_IDS.has(e.id) && e.id !== currentId &&
+    e.keywords.some(kw => kw.length >= 3 && !kw.includes(' ') && lower.includes(kw))
+  );
+  const isPronounFollowup = hasPronounRef && !hasNamedTopic;
+
+  const isContextualFollowup = (intent === 'followup') ||
+    (intent === 'why'     && (!tokens.some(t => t.length >= 3 && !FOLLOWUP_TRIGGER_WORDS.has(t)) || isPronounFollowup)) ||
+    (intent === 'example' && !tokens.some(t => t.length >= 4 && !FOLLOWUP_TRIGGER_WORDS.has(t) && t !== 'example' && t !== 'code' && t !== 'sample')) ||
+    (intent === 'howto'   && (!tokens.some(t => t.length >= 4 && !FOLLOWUP_TRIGGER_WORDS.has(t)) || isPronounFollowup)) ||
+    isPronounFollowup;
+  if (isContextualFollowup) {
+    // Pronoun followups ("how does it work?") always use last topic, bypass token check
+    const hasTopicTokens = !isPronounFollowup && tokens.some(t => t.length >= 3 && !FOLLOWUP_TRIGGER_WORDS.has(t) && t !== 'example' && t !== 'code' && t !== 'sample');
+    if (!hasTopicTokens && BOT_LAST_ENTRY) {
+      const aspect = detectFollowupAspect(raw);
+      const entry  = BOT_LAST_ENTRY;
+
+      if (aspect === 'example' && !hasSeenAspect(entry.id, 'example')) {
+        const section = extractSection(entry.answer, tokens, 'example', 'example');
+        markAspect(entry.id, 'example');
+        response = `Here's a concrete example from **${entry.title}**:\n\n${section}`;
+        recordExchange(raw, response, entry, 'example');
+        return response;
+      }
+      if (aspect === 'why' && !hasSeenAspect(entry.id, 'why')) {
+        const section = extractSection(entry.answer, tokens, 'why', 'why');
+        markAspect(entry.id, 'why');
+        response = `Here's why **${entry.title}** matters:\n\n${section}`;
+        recordExchange(raw, response, entry, 'why');
+        return response;
+      }
+      if (aspect === 'howto') {
+        const section = extractSection(entry.answer, tokens, 'howto', 'howto');
+        markAspect(entry.id, 'howto');
+        response = `Here's how **${entry.title}** works in practice:\n\n${section}`;
+        recordExchange(raw, response, entry, 'howto');
+        return response;
+      }
+
+      // Generic "more" — show full answer, then escalate based on what's been covered
+      const allAspectsCovered = hasSeenAspect(entry.id, 'full') &&
+        hasSeenAspect(entry.id, 'example') && hasSeenAspect(entry.id, 'why');
+      if (!hasSeenAspect(entry.id, 'full')) {
+        markAspect(entry.id, 'full');
+        response = `More on **${entry.title}**:\n\n${entry.answer}${relatedTopics(entry.id)}`;
+      } else if (allAspectsCovered) {
+        const relEntry = BOT_HISTORY.find(e => e.id !== entry.id);
+        response = relEntry
+          ? `We've covered **${entry.title}** thoroughly! Want to explore **${relEntry.title}** next, or ask a specific follow-up like "how does this connect to ${relEntry.title}?"`
+          : `We've covered **${entry.title}** in depth. Try asking about a related topic, or type **help** to see everything I know.`;
+      } else {
+        // Suggest specific next aspects that haven't been covered
+        const missing = [];
+        if (!hasSeenAspect(entry.id, 'why')) missing.push(`"Why is ${entry.title} important?"`);
+        if (!hasSeenAspect(entry.id, 'example') && entry.answer.includes('```')) missing.push(`"Give me a code example"`);
+        if (!hasSeenAspect(entry.id, 'howto')) missing.push(`"How do I use this in practice?"`);
+        response = `We've covered the basics of **${entry.title}**. ${missing.length ? `Dig deeper:\n${missing.slice(0,2).map(s => `- ${s}`).join('\n')}` : ''}`;
+      }
+      recordExchange(raw, response, entry, 'followup');
+      return response;
     }
-    if (BOT_HISTORY.length > 0) {
-      const recent = BOT_HISTORY[0];
-      return `Continuing from **${recent.title}**:\n\n${recent.answer}${relatedTopics(recent.id)}`;
-    }
+    // hasTopicTokens or no last entry: fall through to main search
   }
 
   // ── Quiz intent ──
   if (intent === 'quiz') {
-    return handleQuiz(subject, tokens);
+    response = handleQuiz(subject, tokens);
+    recordExchange(raw, response, null, 'quiz');
+    return response;
   }
 
   // ── Main search: hand-crafted KB ──
@@ -3508,20 +3819,27 @@ function botRespond(userInput) {
     .filter(x => x.score > 0)
     .sort((a, b) => b.score - a.score);
 
+  const prevEntry = BOT_LAST_ENTRY;
+
   if (kbScores.length > 0 && kbScores[0].score >= 6) {
     const best = kbScores[0].entry;
     BOT_LAST_TOPIC = best.id;
     BOT_LAST_ENTRY = best;
     pushHistory(best);
-    const intro = intentIntro(intent, best.title);
-    return (intro || '') + best.answer + relatedTopics(best.id);
+    markAspect(best.id, 'full');
+    const intro = intentIntro(intent, best.title, prevEntry && prevEntry.id !== best.id ? prevEntry : null);
+    response = (intro || '') + best.answer + relatedTopics(best.id) + followUpSuggestions(best);
+    recordExchange(raw, response, best, intent);
+    return response;
   }
 
   // ── Platform data search ──
   const platformResults = searchPlatformData(tokens, subject);
   if (platformResults.length > 0 && platformResults[0].score >= 6) {
     BOT_LAST_ENTRY = null;
-    return formatPlatformResult(platformResults[0], intent);
+    response = formatPlatformResult(platformResults[0], intent);
+    recordExchange(raw, response, null, intent);
+    return response;
   }
 
   // ── Weak KB match (score 3-5) ──
@@ -3530,13 +3848,18 @@ function botRespond(userInput) {
     BOT_LAST_TOPIC = best.id;
     BOT_LAST_ENTRY = best;
     pushHistory(best);
-    const intro = intentIntro(intent, best.title);
-    return (intro || '') + best.answer + relatedTopics(best.id);
+    markAspect(best.id, 'full');
+    const intro = intentIntro(intent, best.title, prevEntry && prevEntry.id !== best.id ? prevEntry : null);
+    response = (intro || '') + best.answer + relatedTopics(best.id);
+    recordExchange(raw, response, best, intent);
+    return response;
   }
 
   // ── Weak platform match ──
   if (platformResults.length > 0 && platformResults[0].score >= 3) {
-    return formatPlatformResult(platformResults[0], intent);
+    response = formatPlatformResult(platformResults[0], intent);
+    recordExchange(raw, response, null, intent);
+    return response;
   }
 
   // ── Smart fallback: suggest closest matching topics ──
@@ -3548,8 +3871,13 @@ function botRespond(userInput) {
 
   if (topMatches.length > 0) {
     const suggestions = topMatches.map(x => `- "${x.entry.title}"`).join('\n');
-    return `I'm not 100% sure what you're asking — but based on your question, you might mean one of these:\n\n${suggestions}\n\nTry asking: "explain [topic]" or "how does [topic] work?". Type **help** for the full topic map.`;
+    const contextNote = prevEntry ? ` (we were discussing **${prevEntry.title}**)` : '';
+    response = `I'm not sure exactly what you mean${contextNote} — did you mean one of these?\n\n${suggestions}\n\nTry: "explain [topic]" or "how does [topic] work?"`;
+    recordExchange(raw, response, null, 'fallback');
+    return response;
   }
 
-  return `I didn't quite catch that — could you rephrase?\n\nTry:\n- "What is [concept]?"\n- "How does [tool] work?"\n- "Difference between X and Y?"\n- "Give me an example of [topic]"\n\nType **help** to see my full topic map.`;
+  response = `I didn't quite catch that — could you rephrase?\n\nTry:\n- "What is [concept]?"\n- "How does [tool] work?"\n- "Difference between X and Y?"\n- "Give me an example of [topic]"\n\nType **help** to see my full topic map.`;
+  recordExchange(raw, response, null, 'fallback');
+  return response;
 }
