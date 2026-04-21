@@ -2216,6 +2216,853 @@ docs: add README for pipeline setup
 - List tools: Airflow, dbt, Spark, BigQuery — ATS scans for these
 - Show impact: "enabled daily reporting for 3 business teams"
 - GitHub link with real code — most candidates don't have this`
+  },
+
+  // ── STEP 4 ENTRIES ──────────────────────────────────────────
+
+  {
+    id: 'schema-evolution',
+    title: 'Schema Evolution & Schema Drift',
+    keywords: ['schema evolution','schema drift','schema change','column added','column removed','breaking change','backward compatible','forward compatible','avro schema','schema registry','source change'],
+    related: ['data-quality','etl-elt','kafka-basics'],
+    answer: `**Schema drift** happens when the source data structure changes unexpectedly — a column is added, renamed, removed, or its type changes. It's one of the most common pipeline failures in production.
+
+**Types of schema changes:**
+| Change | Backward compatible? | Risk |
+|--------|---------------------|------|
+| Add nullable column | Yes | Low — old consumers ignore new field |
+| Add NOT NULL column | No | High — old data has no value for it |
+| Rename column | No | High — breaks all downstream queries |
+| Change column type | Usually no | High — INT→STRING breaks aggregations |
+| Remove column | No | High — breaks anything referencing it |
+
+**How to detect schema drift:**
+\`\`\`python
+import pandas as pd
+
+EXPECTED_SCHEMA = {'order_id': 'int64', 'amount': 'float64', 'status': 'object'}
+
+def validate_schema(df, expected):
+    actual = dict(df.dtypes.astype(str))
+    missing = set(expected) - set(actual)
+    extra   = set(actual) - set(expected)
+    wrong   = {c: (expected[c], actual[c]) for c in expected if c in actual and expected[c] != actual[c]}
+    if missing or extra or wrong:
+        raise ValueError(f"Schema drift! Missing: {missing}, Extra: {extra}, Wrong types: {wrong}")
+
+df = pd.read_csv("orders.csv")
+validate_schema(df, EXPECTED_SCHEMA)
+\`\`\`
+
+**Strategies for handling schema evolution:**
+
+1. **Additive-only policy** — only allow adding nullable columns, never rename or remove
+2. **Versioned schemas** — keep old table + create new table with suffix \`_v2\`
+3. **Schema registry** (Kafka/Avro) — centralized contract for every topic's schema
+4. **dbt source freshness + schema tests** — auto-alert when source columns change
+5. **SELECT explicit columns** — never \`SELECT *\` in production — add new columns deliberately
+
+\`\`\`sql
+-- BAD: breaks if source adds unexpected columns
+SELECT * FROM raw.orders
+
+-- GOOD: explicit, controlled
+SELECT order_id, customer_id, amount, status, created_at
+FROM raw.orders
+\`\`\`
+
+**In dbt:** add \`sources.yml\` with column definitions → \`dbt source freshness\` catches late/missing data.`
+  },
+
+  {
+    id: 'data-contracts',
+    title: 'Data Contracts',
+    keywords: ['data contract','data contracts','sla','data sla','data agreement','producer consumer','data ownership','data quality sla','data mesh','data governance'],
+    related: ['data-quality','schema-evolution','data-modeling'],
+    answer: `**Data contracts** are formal agreements between data producers (engineers who build pipelines) and data consumers (analysts, data scientists) that define what data will look like and when it will arrive.
+
+**What a data contract specifies:**
+\`\`\`yaml
+# Example data contract (YAML format)
+contract:
+  name: orders_daily
+  owner: data-engineering-team
+  consumers: [analytics, ml-team, finance]
+
+  schema:
+    - name: order_id
+      type: integer
+      nullable: false
+      unique: true
+    - name: amount
+      type: float
+      nullable: false
+      constraints: "> 0"
+
+  sla:
+    freshness: "data available by 06:00 UTC daily"
+    completeness: "99.9% of source orders present"
+    latency_max: "2 hours from source to warehouse"
+
+  change_policy:
+    breaking_changes: "30 days notice required"
+    additive_changes: "7 days notice"
+    notification_channel: "#data-platform-changes"
+\`\`\`
+
+**Why they matter:**
+- Analysts build dashboards on your tables — silent schema changes break their work
+- Without contracts, DE team gets blamed for every downstream breakage
+- Contracts shift ownership: producer owns schema stability, consumer owns usage
+
+**Tools for data contracts:**
+- **Great Expectations** — codify expectations as executable contracts
+- **dbt** — schema tests + docs = partial contract enforcement
+- **Soda Core** — dedicated data quality framework
+- **OpenDataContract** — open spec for contract-as-code
+
+**Real-world pattern:**
+\`\`\`python
+# On pipeline success — publish contract metadata
+contract = {
+    "table": "fct_orders",
+    "row_count": len(df),
+    "max_updated_at": df["updated_at"].max().isoformat(),
+    "schema_hash": hash(str(df.dtypes.to_dict())),
+    "run_timestamp": datetime.utcnow().isoformat()
+}
+# Log to metadata table → dashboards show freshness + completeness
+\`\`\``
+  },
+
+  {
+    id: 'observability',
+    title: 'Data Observability & Lineage',
+    keywords: ['observability','data observability','data lineage','lineage','data monitoring','data freshness','data anomaly','monte carlo','data catalog','column lineage','upstream downstream','data discovery'],
+    related: ['data-quality','data-contracts','debugging-pipelines'],
+    answer: `**Data observability** = knowing the health of your data at all times. It's like application monitoring (Datadog, Grafana) but for data.
+
+**The 5 pillars of data observability:**
+| Pillar | What it means | How to measure |
+|--------|---------------|----------------|
+| **Freshness** | Is data up to date? | \`MAX(updated_at) < NOW() - INTERVAL '2 hours'\` |
+| **Volume** | Expected row count? | Row count drops/spikes alert |
+| **Schema** | Structure unchanged? | Column count, types match |
+| **Distribution** | Values in normal range? | Null rate, min/max, unique count |
+| **Lineage** | Where did this data come from? | Table → table dependency graph |
+
+**Basic observability with SQL:**
+\`\`\`sql
+-- Freshness check
+SELECT
+  table_name,
+  MAX(updated_at) AS last_update,
+  EXTRACT(EPOCH FROM (NOW() - MAX(updated_at)))/3600 AS hours_stale
+FROM fct_orders
+GROUP BY 1
+HAVING hours_stale > 2;
+
+-- Volume anomaly: flag if row count drops >20% vs yesterday
+WITH today AS (SELECT COUNT(*) AS cnt FROM fct_orders WHERE DATE(created_at) = CURRENT_DATE),
+     yesterday AS (SELECT COUNT(*) AS cnt FROM fct_orders WHERE DATE(created_at) = CURRENT_DATE - 1)
+SELECT
+  today.cnt, yesterday.cnt,
+  ROUND(100.0 * (today.cnt - yesterday.cnt) / NULLIF(yesterday.cnt, 0), 1) AS pct_change
+FROM today, yesterday;
+\`\`\`
+
+**Data Lineage** = tracking how data flows from source to destination:
+\`\`\`
+PostgreSQL (orders table)
+  → Airflow extracts → S3 raw/orders/
+    → Spark transforms → S3 clean/orders/
+      → dbt models → BigQuery fct_orders
+        → Looker dashboard "Revenue Report"
+\`\`\`
+
+If revenue report shows wrong numbers, lineage tells you exactly which step broke.
+
+**Tools:**
+- **dbt docs** — auto-generates lineage graph for all models
+- **OpenLineage / Marquez** — open standard for pipeline lineage
+- **Monte Carlo** — commercial observability platform
+- **Atlan, DataHub** — data catalog + lineage
+
+**Minimum viable observability (build yourself):**
+1. Log row counts + runtime to a \`pipeline_runs\` table after every job
+2. Query that table in a daily health dashboard
+3. Alert if freshness > threshold or row count drops > 20%`
+  },
+
+  {
+    id: 'cloud-storage',
+    title: 'Cloud Storage for DE (S3 & GCS)',
+    keywords: ['s3','gcs','cloud storage','aws s3','google cloud storage','object storage','bucket','prefix','boto3','gsutil','storage class','data lake storage','partitioned path'],
+    related: ['parquet','etl-elt','data-lake'],
+    answer: `**S3 (AWS) and GCS (Google Cloud)** are the object storage backbone of modern data engineering. Most data lakes live here.
+
+**Core concepts:**
+- **Bucket** — top-level container (like a drive)
+- **Object / Blob** — a file stored at a key (path)
+- **Prefix** — path-like string used as a folder (not a real folder)
+- **Partitioned path** — embed date/category in path for query efficiency
+
+**Best practice path structure:**
+\`\`\`
+s3://my-data-lake/
+  raw/
+    orders/year=2025/month=03/day=15/orders_20250315.parquet
+    customers/year=2025/month=03/day=15/
+  clean/
+    orders/year=2025/month=03/
+  gold/
+    fct_orders/year=2025/month=03/
+\`\`\`
+This Hive-style partitioning lets Spark/Athena/BigQuery skip entire folders.
+
+**Python with S3 (boto3):**
+\`\`\`python
+import boto3, pandas as pd
+from io import BytesIO
+
+s3 = boto3.client("s3")
+
+# Upload DataFrame as Parquet
+def upload_df(df, bucket, key):
+    buf = BytesIO()
+    df.to_parquet(buf, index=False, engine="pyarrow")
+    buf.seek(0)
+    s3.put_object(Bucket=bucket, Key=key, Body=buf.getvalue())
+
+# Read Parquet from S3
+def read_df(bucket, key):
+    obj = s3.get_object(Bucket=bucket, Key=key)
+    return pd.read_parquet(BytesIO(obj["Body"].read()))
+
+# List objects under prefix
+def list_files(bucket, prefix):
+    paginator = s3.get_paginator("list_objects_v2")
+    for page in paginator.paginate(Bucket=bucket, Prefix=prefix):
+        for obj in page.get("Contents", []):
+            yield obj["Key"]
+\`\`\`
+
+**Python with GCS (google-cloud-storage):**
+\`\`\`python
+from google.cloud import storage
+
+client = storage.Client()
+bucket = client.bucket("my-data-lake")
+
+# Upload
+blob = bucket.blob("raw/orders/2025-03-15.parquet")
+blob.upload_from_filename("local_orders.parquet")
+
+# Download
+blob.download_to_filename("local_orders.parquet")
+\`\`\`
+
+**Storage classes (cost optimization):**
+| Class | Access | Cost | Use case |
+|-------|--------|------|----------|
+| Standard | Instant | High | Hot data, current month |
+| Infrequent Access | Instant | Medium | Data older than 30 days |
+| Glacier / Archive | Hours | Very low | Cold data, compliance retention |
+
+**Lifecycle policies** — automatically move old files to cheaper storage after N days.`
+  },
+
+  {
+    id: 'delta-iceberg',
+    title: 'Delta Lake & Apache Iceberg',
+    keywords: ['delta lake','apache iceberg','table format','open table format','lakehouse','acid transactions','time travel','delta','iceberg','hudi','data lakehouse','versioning','merge into'],
+    related: ['parquet','data-warehouse','spark-basics'],
+    answer: `**Delta Lake** and **Apache Iceberg** are open table formats that add ACID transactions, versioning, and schema evolution to Parquet files in S3/GCS — turning a data lake into a **Lakehouse**.
+
+**The problem they solve:**
+Plain Parquet files in S3 have no transactions. Two writers = corrupted files. No rollback if something goes wrong. No efficient updates/deletes.
+
+**What they add on top of Parquet:**
+| Feature | Plain Parquet | Delta/Iceberg |
+|---------|--------------|---------------|
+| ACID transactions | No | Yes |
+| UPDATE/DELETE rows | No | Yes |
+| Time travel (query old data) | No | Yes |
+| Schema evolution | Manual | Built-in |
+| Concurrent writers | Unsafe | Safe |
+
+**Delta Lake with PySpark:**
+\`\`\`python
+from delta import DeltaTable
+from pyspark.sql import SparkSession
+
+spark = SparkSession.builder \
+    .config("spark.jars.packages", "io.delta:delta-core_2.12:2.4.0") \
+    .getOrCreate()
+
+# Write as Delta
+df.write.format("delta").mode("overwrite").save("s3://lake/orders/")
+
+# MERGE (upsert) — key Delta feature
+delta_table = DeltaTable.forPath(spark, "s3://lake/orders/")
+delta_table.alias("target").merge(
+    updates_df.alias("updates"),
+    "target.order_id = updates.order_id"
+).whenMatchedUpdateAll().whenNotMatchedInsertAll().execute()
+
+# Time travel — query data as of yesterday
+df_yesterday = spark.read.format("delta") \
+    .option("timestampAsOf", "2025-03-14") \
+    .load("s3://lake/orders/")
+\`\`\`
+
+**Delta vs Iceberg vs Hudi:**
+| | Delta Lake | Apache Iceberg | Apache Hudi |
+|-|-----------|----------------|-------------|
+| **Origin** | Databricks | Netflix | Uber |
+| **Best with** | Databricks, Spark | Any engine (multi-engine) | Streaming + batch |
+| **Time travel** | Yes | Yes | Yes |
+| **Multi-engine** | Improving | Excellent | Good |
+
+**When to use:**
+- Databricks shop → Delta Lake
+- Multi-engine (Spark + Trino + Flink) → Iceberg
+- Need row-level streaming upserts → Hudi`
+  },
+
+  {
+    id: 'dbt-advanced',
+    title: 'dbt Advanced — Macros, Snapshots & Hooks',
+    keywords: ['dbt macro','dbt snapshot','dbt hook','dbt test','dbt source','dbt seed','dbt incremental','dbt vars','jinja','dbt advanced','dbt package','dbt utils','dbt generic test'],
+    related: ['dbt-basics','ctes-advanced','data-quality'],
+    answer: `**dbt advanced patterns** that separate junior from senior DE work.
+
+**Macros — reusable SQL logic (Jinja templating):**
+\`\`\`sql
+-- macros/cents_to_dollars.sql
+{% macro cents_to_dollars(column_name) %}
+  ({{ column_name }} / 100.0)::numeric(10,2)
+{% endmacro %}
+
+-- models/fct_orders.sql
+SELECT
+  order_id,
+  {{ cents_to_dollars('amount_cents') }} AS amount_dollars
+FROM {{ ref('stg_orders') }}
+\`\`\`
+
+**Snapshots — SCD Type 2 automatically:**
+\`\`\`sql
+-- snapshots/customer_snapshot.sql
+{% snapshot customer_snapshot %}
+{{
+  config(
+    target_schema='snapshots',
+    unique_key='customer_id',
+    strategy='timestamp',
+    updated_at='updated_at',
+  )
+}}
+SELECT * FROM {{ source('app_db', 'customers') }}
+{% endsnapshot %}
+\`\`\`
+dbt tracks old values automatically, adds \`dbt_valid_from\`, \`dbt_valid_to\`, \`dbt_is_current\`.
+
+**Incremental models — only process new rows:**
+\`\`\`sql
+{{ config(materialized='incremental', unique_key='order_id') }}
+
+SELECT order_id, customer_id, amount, created_at
+FROM {{ ref('stg_orders') }}
+
+{% if is_incremental() %}
+  WHERE created_at > (SELECT MAX(created_at) FROM {{ this }})
+{% endif %}
+\`\`\`
+
+**Hooks — run SQL before/after model:**
+\`\`\`yaml
+# dbt_project.yml
+models:
+  my_project:
+    +post-hook:
+      - "GRANT SELECT ON {{ this }} TO ROLE reporter"
+      - "ANALYZE {{ this }}"
+\`\`\`
+
+**Custom generic tests:**
+\`\`\`sql
+-- tests/generic/assert_positive.sql
+{% test assert_positive(model, column_name) %}
+SELECT {{ column_name }} FROM {{ model }}
+WHERE {{ column_name }} <= 0
+{% endtest %}
+\`\`\`
+\`\`\`yaml
+# usage in schema.yml
+columns:
+  - name: amount
+    tests:
+      - assert_positive
+\`\`\`
+
+**dbt_utils package** — install with \`packages.yml\`, gives you:
+- \`dbt_utils.surrogate_key()\` — hash-based PK from multiple columns
+- \`dbt_utils.pivot()\` — SQL pivot macro
+- \`dbt_utils.date_spine()\` — generate a date series`
+  },
+
+  {
+    id: 'cost-optimization',
+    title: 'Data Warehouse Cost Optimization',
+    keywords: ['cost optimization','cost','warehouse cost','bigquery cost','snowflake cost','query cost','partition pruning','clustering','materialized view','caching','cost control','expensive query','reduce cost'],
+    related: ['data-warehouse','indexes','views-materialized'],
+    answer: `Cloud DWH costs scale with compute and data scanned — unoptimized queries can cost thousands per month.
+
+**BigQuery cost optimization:**
+\`\`\`sql
+-- BAD: scans entire table every time
+SELECT * FROM dataset.orders WHERE DATE(created_at) = '2025-03-15'
+
+-- GOOD: use partitioned table (only scans one day's data)
+CREATE TABLE dataset.orders
+PARTITION BY DATE(created_at);
+-- Same query now scans 1/365 of the data → ~99% cheaper
+
+-- GOOD: clustering reduces scans within a partition
+CREATE TABLE dataset.orders
+PARTITION BY DATE(created_at)
+CLUSTER BY customer_id, status;
+\`\`\`
+
+**Snowflake cost optimization:**
+\`\`\`sql
+-- Auto-suspend warehouse when idle (don't pay for idle compute)
+ALTER WAREHOUSE my_wh SET AUTO_SUSPEND = 60;  -- suspend after 60s
+
+-- Result cache: Snowflake caches query results 24h — exact same query = free
+-- Don't add NOW() or CURRENT_TIMESTAMP() to queries unnecessarily
+
+-- Use SEARCH OPTIMIZATION for point lookups on large tables
+ALTER TABLE orders ADD SEARCH OPTIMIZATION ON EQUALITY(customer_id);
+\`\`\`
+
+**Universal optimizations:**
+
+1. **SELECT only needed columns** — columnar DBs scan only requested columns
+\`\`\`sql
+-- BAD (scans all columns)
+SELECT * FROM fct_orders
+
+-- GOOD (scans 2 columns only)
+SELECT order_id, amount FROM fct_orders
+\`\`\`
+
+2. **Filter early, join late** — push WHERE clauses into CTEs/subqueries
+3. **Materialize expensive CTEs** — if referenced 3+ times, make it a table
+4. **Partition your tables** — always partition large tables by date
+5. **Drop unused tables** — data graveyards cost storage money
+6. **Scheduled queries** — run heavy reports once, cache result, don't re-run per user
+
+**EXPLAIN / query profiling:**
+\`\`\`sql
+-- See query execution plan and cost
+EXPLAIN SELECT * FROM orders WHERE customer_id = 123;
+-- Look for: Seq Scan (bad on large tables) vs Index Scan (good)
+\`\`\``
+  },
+
+  {
+    id: 'testing-pipelines',
+    title: 'Testing Data Pipelines',
+    keywords: ['test pipeline','unit test','integration test','pytest','testing','test data','mock','fixture','pipeline test','data test','test driven','tdd','test airflow','test transformation'],
+    related: ['data-quality','debugging-pipelines','dbt-basics'],
+    answer: `**Testing data pipelines** ensures transforms are correct and catches regressions before they reach production.
+
+**Three levels of testing:**
+
+**1. Unit tests — test individual transform functions:**
+\`\`\`python
+import pytest
+import pandas as pd
+from transforms import clean_orders  # your transform function
+
+def test_clean_orders_removes_nulls():
+    raw = pd.DataFrame({
+        "order_id": [1, 2, None],
+        "amount":   [10.0, 20.0, 30.0]
+    })
+    result = clean_orders(raw)
+    assert result["order_id"].isna().sum() == 0
+
+def test_clean_orders_calculates_revenue():
+    raw = pd.DataFrame({"quantity": [2, 3], "unit_price": [10.0, 5.0]})
+    result = clean_orders(raw)
+    assert list(result["revenue"]) == [20.0, 15.0]
+\`\`\`
+
+**2. Integration tests — test full pipeline with real (small) data:**
+\`\`\`python
+# Use a test database, not production
+@pytest.fixture
+def test_db(tmp_path):
+    from sqlalchemy import create_engine
+    engine = create_engine(f"sqlite:///{tmp_path}/test.db")
+    yield engine
+    engine.dispose()
+
+def test_load_orders_end_to_end(test_db):
+    sample_df = pd.DataFrame({
+        "order_id": [1, 2, 3],
+        "amount": [10.0, 20.0, 30.0],
+        "status": ["completed", "pending", "completed"]
+    })
+    load_orders(sample_df, test_db)  # your load function
+    result = pd.read_sql("SELECT COUNT(*) as cnt FROM orders", test_db)
+    assert result["cnt"][0] == 3
+\`\`\`
+
+**3. Data quality tests — assert properties of output data:**
+\`\`\`python
+def assert_no_duplicates(df, key_col):
+    dups = df[key_col].duplicated().sum()
+    assert dups == 0, f"Found {dups} duplicate {key_col} values"
+
+def assert_referential_integrity(orders_df, customers_df):
+    orphan_orders = ~orders_df["customer_id"].isin(customers_df["customer_id"])
+    assert orphan_orders.sum() == 0, f"{orphan_orders.sum()} orders with missing customer"
+\`\`\`
+
+**Testing Airflow DAGs:**
+\`\`\`python
+from airflow.models import DagBag
+
+def test_dag_loads_without_errors():
+    dagbag = DagBag(dag_folder="dags/", include_examples=False)
+    assert len(dagbag.import_errors) == 0, f"DAG import errors: {dagbag.import_errors}"
+
+def test_dag_has_expected_tasks():
+    dagbag = DagBag(dag_folder="dags/")
+    dag = dagbag.get_dag("orders_pipeline")
+    assert set(dag.task_ids) == {"extract", "validate", "transform", "load"}
+\`\`\``
+  },
+
+  {
+    id: 'cdc-debezium',
+    title: 'CDC with Debezium',
+    keywords: ['cdc','change data capture','debezium','wal','write ahead log','logical replication','binlog','mysql binlog','postgres wal','real time sync','event streaming','debezium connector'],
+    related: ['kafka-basics','incremental-loading','data-quality'],
+    answer: `**CDC (Change Data Capture)** reads the database transaction log to capture every INSERT, UPDATE, DELETE in real time — without polling the source.
+
+**How Debezium works:**
+\`\`\`
+PostgreSQL WAL (Write-Ahead Log)
+    ↓  (Debezium connector reads log)
+Kafka Topic: dbserver.public.orders
+    ↓  (consumers read events)
+DWH Loader → BigQuery/Snowflake
+ML Pipeline → Feature Store
+Cache Invalidation → Redis
+\`\`\`
+
+**WAL / binlog explained:**
+Every database keeps a transaction log for crash recovery. CDC tools like Debezium read that log rather than querying the table — so they catch every change including DELETEs (which no updated_at watermark can catch).
+
+**Debezium event format (Kafka message):**
+\`\`\`json
+{
+  "op": "u",
+  "before": { "order_id": 1, "status": "pending" },
+  "after":  { "order_id": 1, "status": "completed" },
+  "source": {
+    "table": "orders",
+    "ts_ms": 1710000000000,
+    "lsn": 12345678
+  }
+}
+\`\`\`
+- \`op\`: "c" = create, "u" = update, "d" = delete, "r" = snapshot (initial load)
+
+**PostgreSQL setup for Debezium:**
+\`\`\`sql
+-- Enable logical replication
+ALTER SYSTEM SET wal_level = logical;
+
+-- Create replication slot
+SELECT pg_create_logical_replication_slot('debezium', 'pgoutput');
+
+-- Grant permissions to Debezium user
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO debezium_user;
+GRANT REPLICATION ON DATABASE mydb TO debezium_user;
+\`\`\`
+
+**Processing CDC events in Python:**
+\`\`\`python
+from kafka import KafkaConsumer
+import json
+
+consumer = KafkaConsumer("dbserver.public.orders", ...)
+for msg in consumer:
+    event = json.loads(msg.value)
+    op = event["op"]
+    if op in ("c", "u"):
+        upsert_to_dwh(event["after"])
+    elif op == "d":
+        soft_delete_in_dwh(event["before"]["order_id"])
+\`\`\`
+
+**CDC vs Polling:**
+| | CDC | Polling (watermark) |
+|-|-----|---------------------|
+| Catches DELETEs | Yes | No |
+| Source load | Near zero | Queries source on schedule |
+| Latency | Sub-second | Batch interval (minutes/hours) |
+| Complexity | High (needs WAL access) | Low |`
+  },
+
+  {
+    id: 'python-typing',
+    title: 'Python Type Hints & Dataclasses',
+    keywords: ['type hints','type hint','typing','dataclass','dataclasses','mypy','pydantic','type annotation','typed python','static typing','optional','union','list type','dict type','model'],
+    related: ['python-setup','python-error-handling','python-decorators'],
+    answer: `**Type hints** make Python code self-documenting, catch bugs at development time, and are standard in modern DE codebases.
+
+**Basic type hints:**
+\`\`\`python
+from typing import Optional, List, Dict, Tuple
+
+def load_orders(
+    source_table: str,
+    batch_size: int = 1000,
+    filters: Optional[Dict[str, str]] = None
+) -> List[Dict]:
+    ...
+
+def get_row_count(table: str) -> int:
+    ...
+
+# Python 3.9+ — use built-in types directly (no need for typing module)
+def process(data: list[dict]) -> dict[str, int]:
+    ...
+\`\`\`
+
+**Dataclasses — structured config objects:**
+\`\`\`python
+from dataclasses import dataclass, field
+from typing import Optional
+
+@dataclass
+class PipelineConfig:
+    source_table: str
+    target_table: str
+    batch_size: int = 1000
+    incremental: bool = True
+    partition_col: str = "created_at"
+    tags: list[str] = field(default_factory=list)
+    watermark: Optional[str] = None
+
+# Usage
+config = PipelineConfig(
+    source_table="raw.orders",
+    target_table="fct_orders",
+    batch_size=5000
+)
+print(config.batch_size)  # 5000 — autocomplete works in IDEs
+\`\`\`
+
+**Pydantic — dataclasses with validation (used in FastAPI, Airflow):**
+\`\`\`python
+from pydantic import BaseModel, validator
+from typing import Optional
+from datetime import datetime
+
+class OrderEvent(BaseModel):
+    order_id: int
+    customer_id: int
+    amount: float
+    status: str
+    created_at: datetime
+
+    @validator("amount")
+    def amount_must_be_positive(cls, v):
+        if v <= 0:
+            raise ValueError("amount must be positive")
+        return v
+
+    @validator("status")
+    def status_must_be_valid(cls, v):
+        valid = {"pending", "completed", "cancelled"}
+        if v not in valid:
+            raise ValueError(f"status must be one of {valid}")
+        return v
+
+# Parses AND validates
+event = OrderEvent(**raw_dict)  # raises ValidationError if invalid
+\`\`\`
+
+**Why use them in DE:**
+- Airflow operators with typed params are self-documenting
+- Pipeline configs as dataclasses = no more mystery dicts
+- Pydantic for API ingestion = validate at the boundary, not deep in the pipeline`
+  },
+
+  {
+    id: 'api-pagination',
+    title: 'REST API Pagination & Rate Limiting',
+    keywords: ['api pagination','pagination','page','cursor','offset','rate limit','throttle','retry','backoff','rest api','requests','api ingestion','next page','paginate','rate limiting'],
+    related: ['python-apis','python-error-handling','incremental-loading'],
+    answer: `**API pagination** is how APIs serve large datasets in chunks. Every production API has it — your ingestion code must handle it.
+
+**Three pagination styles:**
+
+**1. Offset/Page pagination:**
+\`\`\`python
+import requests, time
+
+def fetch_all_orders(base_url, api_key):
+    page = 1
+    all_records = []
+    while True:
+        resp = requests.get(
+            f"{base_url}/orders",
+            params={"page": page, "per_page": 100},
+            headers={"Authorization": f"Bearer {api_key}"}
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        records = data.get("data", [])
+        if not records:
+            break
+        all_records.extend(records)
+        page += 1
+        if not data.get("has_more", False):  # or check total_pages
+            break
+    return all_records
+\`\`\`
+
+**2. Cursor pagination (most reliable for large datasets):**
+\`\`\`python
+def fetch_with_cursor(base_url, api_key):
+    cursor = None
+    while True:
+        params = {"limit": 200}
+        if cursor:
+            params["cursor"] = cursor
+        resp = requests.get(f"{base_url}/events", params=params,
+                            headers={"Authorization": f"Bearer {api_key}"})
+        data = resp.json()
+        yield from data["items"]
+        cursor = data.get("next_cursor")
+        if not cursor:
+            break
+\`\`\`
+
+**3. Link header pagination (GitHub-style):**
+\`\`\`python
+url = "https://api.github.com/repos/org/repo/commits"
+while url:
+    resp = requests.get(url, headers={"Authorization": f"token {TOKEN}"})
+    yield from resp.json()
+    url = resp.links.get("next", {}).get("url")  # None when last page
+\`\`\`
+
+**Rate limiting + exponential backoff:**
+\`\`\`python
+import time, random
+
+def api_get_with_retry(url, headers, max_retries=5):
+    for attempt in range(max_retries):
+        resp = requests.get(url, headers=headers)
+        if resp.status_code == 429:  # Too Many Requests
+            retry_after = int(resp.headers.get("Retry-After", 2 ** attempt))
+            jitter = random.uniform(0, 1)
+            time.sleep(retry_after + jitter)
+            continue
+        resp.raise_for_status()
+        return resp.json()
+    raise Exception(f"API failed after {max_retries} retries")
+\`\`\`
+
+**Incremental API ingestion (checkpoint pattern):**
+\`\`\`python
+# Save last fetched timestamp, only pull new records
+last_ts = get_last_watermark()
+for page in fetch_with_cursor(since=last_ts):
+    process_and_load(page)
+save_watermark(datetime.utcnow())
+\`\`\``
+  },
+
+  {
+    id: 'query-performance',
+    title: 'SQL Query Performance & EXPLAIN',
+    keywords: ['query performance','slow query','explain','explain analyze','query plan','seq scan','index scan','vacuum','analyze','query optimization','execution plan','cost estimate','nested loop','hash join','full table scan'],
+    related: ['indexes','normalization','cost-optimization'],
+    answer: `**EXPLAIN** shows the database's execution plan — how it will run your query, what indexes it uses, and estimated cost.
+
+**Reading EXPLAIN output:**
+\`\`\`sql
+EXPLAIN ANALYZE SELECT * FROM orders WHERE customer_id = 123;
+
+-- Output:
+-- Index Scan using orders_customer_id_idx on orders  (cost=0.43..8.45 rows=1 width=120)
+--                                                     actual time=0.028..0.031 rows=1 loops=1
+--   Index Cond: (customer_id = 123)
+-- Planning Time: 0.1 ms
+-- Execution Time: 0.05 ms
+\`\`\`
+
+**What to look for:**
+| Node type | Meaning | Good or bad? |
+|-----------|---------|--------------|
+| **Index Scan** | Uses index, reads matching rows | Good for selective queries |
+| **Seq Scan** | Reads entire table | Bad on large tables |
+| **Hash Join** | Builds hash table for join | Good for large joins |
+| **Nested Loop** | Row-by-row join | Good if inner set is small |
+| **Sort** | Explicit sort (no index) | Expensive — add index |
+| **Bitmap Heap Scan** | Multiple index scans merged | Decent |
+
+**Common performance fixes:**
+
+**1. Add missing index:**
+\`\`\`sql
+-- Slow: seq scan on 10M row table
+SELECT * FROM orders WHERE customer_id = 123;
+
+-- Fix:
+CREATE INDEX CONCURRENTLY orders_customer_id ON orders(customer_id);
+-- CONCURRENTLY = no table lock, safe in production
+\`\`\`
+
+**2. Fix N+1 query (loop with query inside loop):**
+\`\`\`python
+# BAD: 1000 queries for 1000 customers
+for customer_id in customer_ids:
+    orders = db.execute(f"SELECT * FROM orders WHERE customer_id = {customer_id}")
+
+# GOOD: 1 query with IN clause
+customer_ids_str = ",".join(str(i) for i in customer_ids)
+orders = db.execute(f"SELECT * FROM orders WHERE customer_id IN ({customer_ids_str})")
+\`\`\`
+
+**3. VACUUM and ANALYZE (PostgreSQL maintenance):**
+\`\`\`sql
+-- After large DELETE/UPDATE — reclaim dead rows
+VACUUM ANALYZE orders;
+
+-- Auto-vacuum runs automatically, but after bulk loads run manually
+-- ANALYZE updates statistics so query planner makes better decisions
+\`\`\`
+
+**4. Avoid functions on indexed columns in WHERE:**
+\`\`\`sql
+-- BAD: function on column = index not used
+WHERE DATE(created_at) = '2025-03-15'
+
+-- GOOD: range filter = index used
+WHERE created_at >= '2025-03-15' AND created_at < '2025-03-16'
+\`\`\``
   }
 ];
 
@@ -2253,6 +3100,18 @@ const BOT_SYNONYMS = {
   'bronze':'pipeline phases','silver':'pipeline phases','gold':'pipeline phases','medallion':'pipeline phases',
   'staging':'pipeline phases','stage layer':'pipeline phases',
   'full load':'incremental loading','batch load':'incremental loading',
+  'schema drift':'schema evolution','column change':'schema evolution','breaking change':'schema evolution',
+  'data contract':'data contracts','sla':'data contracts',
+  'data lineage':'observability','lineage':'observability','data monitoring':'observability',
+  's3':'cloud storage','gcs':'cloud storage','object storage':'cloud storage','boto3':'cloud storage',
+  'delta lake':'delta iceberg','iceberg':'delta iceberg','lakehouse':'delta iceberg','hudi':'delta iceberg',
+  'dbt macro':'dbt advanced','dbt snapshot':'dbt advanced','dbt incremental':'dbt advanced',
+  'slow query':'query performance','explain analyze':'query performance','seq scan':'query performance','vacuum':'query performance',
+  'change data capture':'cdc debezium','debezium':'cdc debezium','wal':'cdc debezium','binlog':'cdc debezium',
+  'type hint':'python typing','dataclass':'python typing','pydantic':'python typing','mypy':'python typing',
+  'pagination':'api pagination','rate limit':'api pagination','cursor pagination':'api pagination',
+  'warehouse cost':'cost optimization','partition pruning':'cost optimization','query cost':'cost optimization',
+  'test pipeline':'testing pipelines','pytest':'testing pipelines','unit test':'testing pipelines',
 };
 
 // --- Stop words to ignore during scoring ---
@@ -2450,6 +3309,19 @@ function relatedTopics(entryId) {
     'spark-partitions':    ['spark-basics','spark-lazy','parquet'],
     'dbt-basics':          ['ctes-advanced','etl-elt','data-quality'],
     'docker-basics':       ['airflow-basics','python-setup','git-for-de'],
+    // Step 4 entries
+    'schema-evolution':    ['data-quality','data-contracts','etl-elt'],
+    'data-contracts':      ['data-quality','schema-evolution','observability'],
+    'observability':       ['data-quality','data-contracts','debugging-pipelines'],
+    'cloud-storage':       ['parquet','delta-iceberg','etl-elt'],
+    'delta-iceberg':       ['parquet','spark-basics','data-warehouse'],
+    'dbt-advanced':        ['dbt-basics','ctes-advanced','data-quality'],
+    'cost-optimization':   ['data-warehouse','indexes','views-materialized'],
+    'testing-pipelines':   ['data-quality','debugging-pipelines','dbt-basics'],
+    'cdc-debezium':        ['kafka-basics','incremental-loading','schema-evolution'],
+    'python-typing':       ['python-setup','python-error-handling','python-decorators'],
+    'api-pagination':      ['python-apis','python-error-handling','incremental-loading'],
+    'query-performance':   ['indexes','normalization','cost-optimization'],
   };
   const ids = rel[entryId] || [];
   const names = ids.map(id => {
