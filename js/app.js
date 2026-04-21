@@ -1249,6 +1249,46 @@ function buildBot() {
     return html;
   }
 
+  function addCopyButtons(container) {
+    container.querySelectorAll('pre.bot-code').forEach(pre => {
+      if (pre.querySelector('.bot-copy-btn')) return;
+      const btn = document.createElement('button');
+      btn.className = 'bot-copy-btn';
+      btn.textContent = 'Copy';
+      btn.addEventListener('click', () => {
+        const code = pre.querySelector('code');
+        navigator.clipboard.writeText(code ? code.innerText : pre.innerText).then(() => {
+          btn.textContent = 'Copied!';
+          setTimeout(() => { btn.textContent = 'Copy'; }, 1800);
+        }).catch(() => {
+          const sel = window.getSelection();
+          const range = document.createRange();
+          range.selectNodeContents(code || pre);
+          sel.removeAllRanges();
+          sel.addRange(range);
+          btn.textContent = 'Selected!';
+          setTimeout(() => { btn.textContent = 'Copy'; }, 1800);
+        });
+      });
+      pre.style.position = 'relative';
+      pre.appendChild(btn);
+    });
+  }
+
+  function updateSuggestions(relatedText) {
+    const suggestionsEl = document.getElementById('bot-suggestions');
+    if (!suggestionsEl) return;
+    const matches = relatedText ? [...relatedText.matchAll(/\*\*(.+?)\*\*/g)].map(m => m[1]) : [];
+    if (matches.length > 0) {
+      suggestionsEl.innerHTML = matches.slice(0, 6).map(t =>
+        `<span class="bot-sugg" data-q="Explain ${t}">${t}</span>`
+      ).join('');
+      suggestionsEl.querySelectorAll('.bot-sugg').forEach(el => {
+        el.addEventListener('click', () => { inputEl.value = el.dataset.q; handleSend(); });
+      });
+    }
+  }
+
   function addMessage(text, role) {
     const wrap = document.createElement('div');
     wrap.className = `bot-msg bot-msg-${role}`;
@@ -1257,7 +1297,13 @@ function buildBot() {
     bubble.innerHTML = renderMarkdown(text);
     wrap.appendChild(bubble);
     messagesEl.appendChild(wrap);
-    messagesEl.scrollTop = messagesEl.scrollHeight;
+    if (role === 'bot') {
+      addCopyButtons(bubble);
+      updateSuggestions(text);
+    }
+    // Only auto-scroll if user is near bottom (within 120px)
+    const nearBottom = messagesEl.scrollHeight - messagesEl.scrollTop - messagesEl.clientHeight < 120;
+    if (nearBottom || role === 'user') messagesEl.scrollTop = messagesEl.scrollHeight;
   }
 
   function addTyping() {
@@ -1280,15 +1326,25 @@ function buildBot() {
     addMessage(val, 'user');
     inputEl.value = '';
     addTyping();
+    // Scale delay by estimated response length (short = fast, long = slightly slower)
+    const delay = 350 + Math.min(val.length * 4, 500);
     setTimeout(() => {
       removeTyping();
       const response = botRespond(val);
       addMessage(response, 'bot');
-    }, 400 + Math.random() * 300);
+    }, delay);
   }
 
   sendBtn.addEventListener('click', handleSend);
   inputEl.addEventListener('keydown', e => { if (e.key === 'Enter') handleSend(); });
+
+  const clearBtn = document.getElementById('bot-clear-btn');
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      messagesEl.innerHTML = '';
+      addMessage('Chat cleared. Ask me anything about Data Engineering, SQL, Python, or tools.', 'bot');
+    });
+  }
 
   document.querySelectorAll('.bot-sugg').forEach(el => {
     el.addEventListener('click', () => {
@@ -1298,7 +1354,7 @@ function buildBot() {
   });
 
   // Welcome message
-  addMessage(`Hey! I'm your offline DE Expert 🧠\n\nI know everything in this platform — SQL, Python, Airflow, Spark, dbt, pipeline design, and interview prep.\n\nAsk me anything or pick a suggestion below.`, 'bot');
+  addMessage(`Hey! I'm your offline DE Expert.\n\nI know everything in this platform — SQL, Python, Airflow, Spark, dbt, pipeline design, and interview prep.\n\nAsk me anything or pick a suggestion below.`, 'bot');
 }
 
 // ---- INIT ----
