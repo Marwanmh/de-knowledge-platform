@@ -39,6 +39,9 @@
     <a class="nav-item" data-nav="roadmap">
       <span class="nav-icon">🗺️</span> Learning Roadmap
     </a>
+    <a class="nav-item" data-nav="bot">
+      <span class="nav-icon">🤖</span> DE Expert Bot
+    </a>
 
     <div class="nav-section-label">Learn</div>
     <a class="nav-item" data-nav="sql-fundamentals">
@@ -295,6 +298,31 @@
       <div id="guides-content"></div>
     </section>
 
+    <!-- DE EXPERT BOT -->
+    <section id="bot" class="section">
+      <div class="page-header">
+        <h1>DE Expert Bot</h1>
+        <p>Your offline Data Engineering expert. Ask anything about SQL, Python, Airflow, Spark, dbt, pipelines, or interview prep. Works without internet.</p>
+      </div>
+      <div class="bot-wrap">
+        <div class="bot-messages" id="bot-messages"></div>
+        <div class="bot-input-row">
+          <input class="bot-input" id="bot-input" type="text" placeholder="Ask anything... e.g. What is idempotency?" autocomplete="off"/>
+          <button class="bot-send-btn" id="bot-send-btn">Send</button>
+        </div>
+        <div class="bot-suggestions" id="bot-suggestions">
+          <span class="bot-sugg" data-q="What is data engineering?">What is DE?</span>
+          <span class="bot-sugg" data-q="Explain window functions">Window functions</span>
+          <span class="bot-sugg" data-q="ETL vs ELT difference">ETL vs ELT</span>
+          <span class="bot-sugg" data-q="How do I connect Python to PostgreSQL?">Python → PostgreSQL</span>
+          <span class="bot-sugg" data-q="What is idempotency?">Idempotency</span>
+          <span class="bot-sugg" data-q="Explain Airflow DAG">Airflow DAG</span>
+          <span class="bot-sugg" data-q="How to prepare for a data engineer interview?">Interview tips</span>
+          <span class="bot-sugg" data-q="What is a star schema?">Star schema</span>
+        </div>
+      </div>
+    </section>
+
     <!-- GUIDED PROJECTS -->
     <section id="projects" class="section">
       <div class="page-header">
@@ -333,6 +361,7 @@
 <script src="js/data-sql.js"></script>
 <script src="js/data-python.js"></script>
 <script src="js/data-guides.js"></script>
+<script src="js/bot-engine.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

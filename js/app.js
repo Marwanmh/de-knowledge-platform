@@ -1128,6 +1128,80 @@ function buildProjects() {
   `).join('');
 }
 
+// ---- DE EXPERT BOT ----
+function buildBot() {
+  const messagesEl = document.getElementById('bot-messages');
+  const inputEl    = document.getElementById('bot-input');
+  const sendBtn    = document.getElementById('bot-send-btn');
+  if (!messagesEl || !inputEl || !sendBtn) return;
+
+  function escapeHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function renderMarkdown(text) {
+    return text
+      .replace(/```(\w*)\n([\s\S]*?)```/g, (_,lang,code) =>
+        `<pre class="bot-code"><code>${escapeHtml(code.trim())}</code></pre>`)
+      .replace(/`([^`]+)`/g, '<code class="bot-inline-code">$1</code>')
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\n\n/g, '</p><p>')
+      .replace(/\n/g, '<br>')
+      .replace(/^/, '<p>').replace(/$/, '</p>');
+  }
+
+  function addMessage(text, role) {
+    const wrap = document.createElement('div');
+    wrap.className = `bot-msg bot-msg-${role}`;
+    const bubble = document.createElement('div');
+    bubble.className = 'bot-bubble';
+    bubble.innerHTML = renderMarkdown(text);
+    wrap.appendChild(bubble);
+    messagesEl.appendChild(wrap);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  function addTyping() {
+    const wrap = document.createElement('div');
+    wrap.className = 'bot-msg bot-msg-bot';
+    wrap.id = 'bot-typing';
+    wrap.innerHTML = '<div class="bot-bubble bot-typing-indicator"><span></span><span></span><span></span></div>';
+    messagesEl.appendChild(wrap);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  function removeTyping() {
+    const el = document.getElementById('bot-typing');
+    if (el) el.remove();
+  }
+
+  function handleSend() {
+    const val = inputEl.value.trim();
+    if (!val) return;
+    addMessage(val, 'user');
+    inputEl.value = '';
+    addTyping();
+    setTimeout(() => {
+      removeTyping();
+      const response = botRespond(val);
+      addMessage(response, 'bot');
+    }, 400 + Math.random() * 300);
+  }
+
+  sendBtn.addEventListener('click', handleSend);
+  inputEl.addEventListener('keydown', e => { if (e.key === 'Enter') handleSend(); });
+
+  document.querySelectorAll('.bot-sugg').forEach(el => {
+    el.addEventListener('click', () => {
+      inputEl.value = el.dataset.q;
+      handleSend();
+    });
+  });
+
+  // Welcome message
+  addMessage(`Hey! I'm your offline DE Expert 🧠\n\nI know everything in this platform — SQL, Python, Airflow, Spark, dbt, pipeline design, and interview prep.\n\nAsk me anything or pick a suggestion below.`, 'bot');
+}
+
 // ---- INIT ----
 document.addEventListener('DOMContentLoaded', ()=>{
   buildKnowledge();
@@ -1138,6 +1212,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
   buildFlashcards();
   buildInterviewQuestions();
   buildSnippets();
+  buildBot();
   buildRoadmap();
   buildSqlFundamentals();
   buildPythonDE();
