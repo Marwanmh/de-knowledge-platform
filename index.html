@@ -4,7 +4,10 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
   <title>Marwan's Data Engineering Hub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link rel="stylesheet" href="css/main.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css"/>
 </head>
 <body>
 
@@ -127,6 +130,7 @@
             <span class="stat-label">Corrections Found</span>
           </div>
         </div>
+        <div id="streak-badge" class="streak-badge" style="display:none"></div>
       </div>
 
       <!-- Daily Recommendation -->
@@ -172,7 +176,7 @@
         <div class="card" style="cursor:pointer" onclick="navigate('interview')">
           <div style="font-size:28px;margin-bottom:12px">💼</div>
           <div style="font-size:16px;font-weight:700;margin-bottom:6px">Interview Readiness</div>
-          <div style="font-size:13px;color:var(--text-secondary)">72/100 base score — updates dynamically as you rate topics. Detailed breakdown + 5 priority weak points.</div>
+          <div style="font-size:13px;color:var(--text-secondary)">Live score that updates as you rate topics and study gaps. Detailed breakdown + priority weak points.</div>
         </div>
       </div>
     </section>
@@ -343,15 +347,15 @@
 </div>
 
 <!-- ===== SEARCH OVERLAY ===== -->
-<div class="search-overlay" id="search-overlay">
+<div class="search-overlay" id="search-overlay" role="dialog" aria-modal="true" aria-label="Search">
   <div class="search-modal">
     <div class="search-input-row">
-      <span class="search-input-icon">🔍</span>
-      <input class="search-input-field" id="search-field" type="text" placeholder="Search topics, gaps, questions, snippets..."/>
-      <button class="search-close-btn" id="search-close-btn">ESC</button>
+      <span class="search-input-icon" aria-hidden="true">🔍</span>
+      <input class="search-input-field" id="search-field" type="text" placeholder="Search topics, gaps, questions, snippets..." aria-label="Search"/>
+      <button class="search-close-btn" id="search-close-btn" aria-label="Close search">ESC</button>
     </div>
-    <div class="search-results" id="search-results"></div>
-    <div class="search-shortcut">
+    <div class="search-results" id="search-results" role="listbox" aria-label="Search results"></div>
+    <div class="search-shortcut" aria-hidden="true">
       <span><kbd>↵</kbd> select</span>
       <span><kbd>Esc</kbd> close</span>
       <span><kbd>Ctrl+K</kbd> open</span>
@@ -370,5 +374,7 @@
 <script src="js/data-guides.js"></script>
 <script src="js/bot-engine.js"></script>
 <script src="js/app.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
 </body>
 </html>

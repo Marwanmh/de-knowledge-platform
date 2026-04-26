@@ -26,6 +26,8 @@ const ELI5_VISIBLE  = new Set(); // topicIds where ELI5 panel is open
 const GAP_EXPANDED  = new Set(); // gap IDs currently expanded
 
 // ---- NAVIGATE ----
+const BUILT_SECTIONS = new Set();
+
 function navigate(sectionId) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -34,6 +36,26 @@ function navigate(sectionId) {
   const navEl = document.querySelector(`[data-nav="${sectionId}"]`);
   if (navEl) navEl.classList.add('active');
   window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  if (!BUILT_SECTIONS.has(sectionId)) {
+    BUILT_SECTIONS.add(sectionId);
+    switch (sectionId) {
+      case 'knowledge':         buildKnowledge(); break;
+      case 'corrections':       buildCorrections(); break;
+      case 'gaps':              buildGaps(); setupGapFilters(); break;
+      case 'connections':       buildConnections(); break;
+      case 'interview':         buildReadiness(); break;
+      case 'flashcards':        buildFlashcards(); break;
+      case 'interview-questions': buildInterviewQuestions(); break;
+      case 'snippets':          buildSnippets(); break;
+      case 'roadmap':           buildRoadmap(); break;
+      case 'sql-fundamentals':  buildSqlFundamentals(); setupSqlFilters(); break;
+      case 'python-de':         buildPythonDE(); break;
+      case 'setup-guides':      buildSetupGuides(); break;
+      case 'projects':          buildProjects(); break;
+    }
+  }
+
   if (sectionId === 'interview') setTimeout(animateReadiness, 120);
 }
 
@@ -44,6 +66,44 @@ function isGapStudied(id)            { return localStorage.getItem('mk_gap_' + i
 function setGapStudied(id, v)        { localStorage.setItem('mk_gap_' + id, v ? '1' : '0'); }
 function isCorrectionReviewed(id)    { return localStorage.getItem('mk_corr_' + id) === '1'; }
 function setCorrectionReviewed(id,v) { localStorage.setItem('mk_corr_' + id, v ? '1' : '0'); }
+function isQPracticed(topicId, idx)  { return localStorage.getItem(`mk_iq_${topicId}_${idx}`) === '1'; }
+function setQPracticed(topicId, idx, v) { localStorage.setItem(`mk_iq_${topicId}_${idx}`, v ? '1' : '0'); }
+
+// ---- STREAK ----
+function getStreak() {
+  const today = new Date().toDateString();
+  let data = {};
+  try { data = JSON.parse(localStorage.getItem('mk_streak') || '{}'); } catch(e) {}
+  if (!data.lastActive) return { count: 0, todayDone: false };
+  const last = new Date(data.lastActive);
+  const now  = new Date();
+  const diffDays = Math.floor((now - last) / 86400000);
+  if (diffDays === 0) return { count: data.count || 1, todayDone: true };
+  if (diffDays === 1) return { count: data.count || 1, todayDone: false };
+  return { count: 0, todayDone: false }; // streak broken
+}
+
+function recordActivity() {
+  const streak = getStreak();
+  const newCount = streak.todayDone ? streak.count : streak.count + 1;
+  localStorage.setItem('mk_streak', JSON.stringify({
+    lastActive: new Date().toDateString(),
+    count: newCount
+  }));
+  return newCount;
+}
+
+function buildStreakBadge() {
+  const streak = getStreak();
+  const el = document.getElementById('streak-badge');
+  if (!el) return;
+  if (streak.count >= 2) {
+    el.textContent = `🔥 ${streak.count} day streak`;
+    el.style.display = '';
+  } else {
+    el.style.display = 'none';
+  }
+}
 
 // ---- SCORE ----
 function calcDynamicScore() {
@@ -155,36 +215,57 @@ function buildDailyRec() {
   let stored = null;
   try { stored = JSON.parse(localStorage.getItem('mk_daily_rec')); } catch(e) {}
 
-  let recId;
-  if (stored && stored.date === today && !isGapStudied(stored.id)) {
-    recId = stored.id;
-  } else {
-    // pick highest-priority unstudied gap
-    const unstudied = GAPS.filter(g => !isGapStudied(g.id));
-    const order = ['critical','high','medium','low'];
-    let pick = null;
-    for (const p of order) {
-      const inP = unstudied.filter(g=>g.priority===p);
-      if (inP.length) { pick = inP[0]; break; }
-    }
-    recId = pick ? pick.id : (GAPS[0]?.id || null);
-    localStorage.setItem('mk_daily_rec', JSON.stringify({ date: today, id: recId }));
+  // Try gaps first (highest priority unstudied)
+  const unstudiedGaps = GAPS.filter(g => !isGapStudied(g.id));
+  const order = ['critical','high','medium','low'];
+  let gapPick = null;
+  for (const p of order) {
+    const inP = unstudiedGaps.filter(g => g.priority === p);
+    if (inP.length) { gapPick = inP[0]; break; }
   }
 
-  const gap = recId ? GAPS.find(g=>g.id===recId) : null;
-  const container = document.getElementById('daily-rec');
-  if (!container || !gap) return;
+  // Fallback: unrated knowledge topic
+  const unratedTopic = KNOWLEDGE.find(k => getConfidence(k.id) === 0);
 
-  container.innerHTML = `
-    <div class="daily-rec" onclick="goToGap('${gap.id}')">
-      <div class="daily-rec-icon">📅</div>
-      <div class="daily-rec-content">
-        <div class="daily-rec-label">Study Today</div>
-        <div class="daily-rec-title">${gap.title}</div>
-        <div class="daily-rec-reason">${gap.subtitle}</div>
-      </div>
-      <div class="daily-rec-action">Open →</div>
-    </div>`;
+  const container = document.getElementById('daily-rec');
+  if (!container) return;
+
+  if (gapPick) {
+    container.innerHTML = `
+      <div class="daily-rec" onclick="goToGap('${gapPick.id}')">
+        <div class="daily-rec-icon">📅</div>
+        <div class="daily-rec-content">
+          <div class="daily-rec-label">Study Today · Gap</div>
+          <div class="daily-rec-title">${gapPick.title}</div>
+          <div class="daily-rec-reason">${gapPick.subtitle}</div>
+        </div>
+        <div class="daily-rec-action">Open →</div>
+      </div>`;
+  } else if (unratedTopic) {
+    container.innerHTML = `
+      <div class="daily-rec" onclick="navigate('knowledge')">
+        <div class="daily-rec-icon">⭐</div>
+        <div class="daily-rec-content">
+          <div class="daily-rec-label">Rate Your Confidence</div>
+          <div class="daily-rec-title">${unratedTopic.title}</div>
+          <div class="daily-rec-reason">${unratedTopic.subtitle}</div>
+        </div>
+        <div class="daily-rec-action">Open →</div>
+      </div>`;
+  } else {
+    // All gaps studied, all topics rated
+    const lowestRated = [...KNOWLEDGE].sort((a,b) => getConfidence(a.id) - getConfidence(b.id))[0];
+    container.innerHTML = `
+      <div class="daily-rec" onclick="navigate('knowledge')">
+        <div class="daily-rec-icon">💪</div>
+        <div class="daily-rec-content">
+          <div class="daily-rec-label">Review & Strengthen</div>
+          <div class="daily-rec-title">${lowestRated.title}</div>
+          <div class="daily-rec-reason">Your lowest confidence topic — keep it sharp before the interview.</div>
+        </div>
+        <div class="daily-rec-action">Open →</div>
+      </div>`;
+  }
 }
 
 function goToGap(id) {
@@ -268,7 +349,7 @@ function buildStudiedGapCard(gap) {
       </div>
       <div class="confidence-row">
         <span class="confidence-label">Confidence</span>
-        <div class="star-rating">${[1,2,3,4,5].map(n=>`<span class="star" data-star="${n}">★</span>`).join('')}</div>
+        <div class="star-rating" role="radiogroup" aria-label="Confidence rating">${[1,2,3,4,5].map(n=>`<span class="star" data-star="${n}" role="radio" aria-label="${n} star" tabindex="0">★</span>`).join('')}</div>
         <span class="confidence-text"></span>
       </div>
     </div>`;
@@ -299,7 +380,7 @@ function buildKnowledgeCard(item) {
       <div class="knowledge-tags">${item.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>
       <div class="confidence-row">
         <span class="confidence-label">Confidence</span>
-        <div class="star-rating">${[1,2,3,4,5].map(n=>`<span class="star" data-star="${n}">★</span>`).join('')}</div>
+        <div class="star-rating" role="radiogroup" aria-label="Confidence rating">${[1,2,3,4,5].map(n=>`<span class="star" data-star="${n}" role="radio" aria-label="${n} star" tabindex="0">★</span>`).join('')}</div>
         <span class="confidence-text"></span>
       </div>
     </div>`;
@@ -336,7 +417,7 @@ function wireKnowledgeCards(container) {
     if (saved > 0) highlightStars(stars, saved, confText);
 
     stars.forEach(star => {
-      star.addEventListener('click', () => {
+      const activateStar = () => {
         const v = parseInt(star.dataset.star);
         setConfidence(confKey, v);
         highlightStars(stars, v, confText);
@@ -345,7 +426,9 @@ function wireKnowledgeCards(container) {
         updateHeroScore();
         const title = isGap ? GAPS.find(g=>g.id===id)?.title : TOPIC_MAP[id]?.title;
         showToast(`"${title}" rated ${v}/5 ⭐`);
-      });
+      };
+      star.addEventListener('click', activateStar);
+      star.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activateStar(); } });
       star.addEventListener('mouseenter', () => {
         const v = parseInt(star.dataset.star);
         stars.forEach(s => s.classList.toggle('active', parseInt(s.dataset.star)<=v));
@@ -495,15 +578,29 @@ function markGapStudied(id) {
 
 // ---- CONNECTIONS ----
 function buildConnections() {
-  document.getElementById('connections-content').innerHTML = CONNECTIONS.map(conn=>`
+  const el = document.getElementById('connections-content');
+  el.innerHTML = CONNECTIONS.map(conn => `
     <div class="connection-card">
       <div class="connection-nodes">
-        <span class="connection-node from">${conn.fromLabel}</span>
+        <span class="connection-node from conn-link" data-id="${conn.from}" title="Go to ${conn.fromLabel}">${conn.fromLabel} ↗</span>
         <span class="connection-arrow">⟶</span>
-        <span class="connection-node to">${conn.toLabel}</span>
+        <span class="connection-node to conn-link" data-id="${conn.to}" title="Go to ${conn.toLabel}">${conn.toLabel} ↗</span>
       </div>
       <div class="connection-text">${conn.relation}</div>
     </div>`).join('');
+
+  el.querySelectorAll('.conn-link').forEach(node => {
+    node.addEventListener('click', () => {
+      navigate('knowledge');
+      setTimeout(() => {
+        const card = document.querySelector(`.knowledge-card[data-id="${node.dataset.id}"]`);
+        if (card) {
+          card.classList.add('expanded');
+          card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 200);
+    });
+  });
 }
 
 // ---- INTERVIEW READINESS ----
@@ -763,17 +860,31 @@ function showQuizComplete() {
 function restartQuiz() { startQuiz(quizState.topicId); }
 
 // ---- INTERVIEW QUESTIONS ----
-function buildInterviewQuestions(filterTopic='all', filterDiff='all') {
+function buildInterviewQuestions(filterTopic='all', filterDiff='all', filterPracticed='all') {
   const container = document.getElementById('iq-content');
+
+  // Stable global flat list — index = localStorage key
+  const globalFlat = INTERVIEW_QUESTIONS.flatMap(iq =>
+    iq.questions.map((q, i) => ({ ...q, topicId: iq.topicId, globalIdx: 0 }))
+  );
+  let gi = 0;
+  INTERVIEW_QUESTIONS.forEach(iq =>
+    iq.questions.forEach((q, i) => { globalFlat[gi].globalIdx = gi; gi++; })
+  );
+
   const topicOpts = [`<option value="all">All Topics</option>`,
     ...INTERVIEW_QUESTIONS.map(iq => {
       const t = TOPIC_MAP[iq.topicId];
-      return `<option value="${iq.topicId}">${t?t.title:iq.topicId}</option>`;
+      return `<option value="${iq.topicId}">${t ? t.title : iq.topicId}</option>`;
     })].join('');
 
-  let allQ = (filterTopic==='all' ? INTERVIEW_QUESTIONS : INTERVIEW_QUESTIONS.filter(iq=>iq.topicId===filterTopic))
-    .flatMap(iq=>iq.questions.map(q=>({...q, topicId:iq.topicId})));
-  if (filterDiff !== 'all') allQ = allQ.filter(q=>q.difficulty===filterDiff);
+  let visible = [...globalFlat];
+  if (filterTopic !== 'all')     visible = visible.filter(q => q.topicId === filterTopic);
+  if (filterDiff !== 'all')      visible = visible.filter(q => q.difficulty === filterDiff);
+  if (filterPracticed === 'not') visible = visible.filter(q => !isQPracticed(q.topicId, q.globalIdx));
+  if (filterPracticed === 'done') visible = visible.filter(q => isQPracticed(q.topicId, q.globalIdx));
+
+  const practicedCount = globalFlat.filter(q => isQPracticed(q.topicId, q.globalIdx)).length;
 
   container.innerHTML = `
     <div class="iq-filter-row">
@@ -783,14 +894,22 @@ function buildInterviewQuestions(filterTopic='all', filterDiff='all') {
         <option value="easy">Easy</option>
         <option value="medium">Medium</option>
       </select>
-      <span class="iq-count">${allQ.length} questions</span>
+      <select class="iq-topic-select" id="iq-practiced-select" style="min-width:150px">
+        <option value="all">All Questions</option>
+        <option value="not">Not Practiced</option>
+        <option value="done">✓ Practiced</option>
+      </select>
+      <span class="iq-count">${visible.length} shown · <span class="iq-practiced-count">${practicedCount}/${globalFlat.length} practiced</span></span>
     </div>
-    ${allQ.map((q,i)=>`
-      <div class="iq-card" data-index="${i}">
+    ${visible.map(q => {
+      const done = isQPracticed(q.topicId, q.globalIdx);
+      return `
+      <div class="iq-card ${done ? 'iq-practiced' : ''}" data-topic="${q.topicId}" data-gidx="${q.globalIdx}">
         <div class="iq-card-header">
-          <span class="iq-q-icon">❓</span>
+          <span class="iq-q-icon">${done ? '✅' : '❓'}</span>
           <div class="iq-question-text">${q.q}</div>
           <div class="iq-meta">
+            ${done ? '<span class="iq-done-badge">Practiced</span>' : ''}
             <span class="badge diff-${q.difficulty}">${q.difficulty}</span>
             <span class="iq-toggle">▾</span>
           </div>
@@ -798,18 +917,44 @@ function buildInterviewQuestions(filterTopic='all', filterDiff='all') {
         <div class="iq-card-body">
           <div class="iq-answer">${q.a}</div>
           <div class="iq-tip">${q.tip}</div>
+          <div class="mark-action-row" style="margin-top:14px">
+            <button class="mark-practiced-btn ${done ? 'done' : ''}" data-topic="${q.topicId}" data-gidx="${q.globalIdx}">
+              ${done ? '✓ Marked as Practiced' : '🎯 Mark as Practiced'}
+            </button>
+            ${done ? `<button class="unmark-btn iq-unmark" data-topic="${q.topicId}" data-gidx="${q.globalIdx}">Undo</button>` : ''}
+          </div>
         </div>
-      </div>`).join('')}`;
+      </div>`;
+    }).join('') || '<div class="empty-state"><div class="empty-icon">✅</div><p>No questions match this filter</p></div>'}`;
 
-  container.querySelectorAll('.iq-card').forEach(card=>
-    card.querySelector('.iq-card-header').addEventListener('click',()=>card.classList.toggle('expanded')));
+  container.querySelectorAll('.iq-card').forEach(card =>
+    card.querySelector('.iq-card-header').addEventListener('click', () => card.classList.toggle('expanded')));
 
-  const topicSel = document.getElementById('iq-select');
-  const diffSel  = document.getElementById('iq-diff-select');
-  topicSel.value = filterTopic;
-  diffSel.value  = filterDiff;
-  topicSel.addEventListener('change', e=>buildInterviewQuestions(e.target.value, diffSel.value));
-  diffSel.addEventListener('change',  e=>buildInterviewQuestions(topicSel.value, e.target.value));
+  container.querySelectorAll('.mark-practiced-btn, .iq-unmark').forEach(btn =>
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const { topic, gidx } = btn.dataset;
+      const was = isQPracticed(topic, gidx);
+      setQPracticed(topic, gidx, !was);
+      buildInterviewQuestions(
+        document.getElementById('iq-select')?.value || 'all',
+        document.getElementById('iq-diff-select')?.value || 'all',
+        document.getElementById('iq-practiced-select')?.value || 'all'
+      );
+      showToast(was ? 'Question unmarked' : '🎯 Question marked as practiced!');
+    }));
+
+  const topicSel     = document.getElementById('iq-select');
+  const diffSel      = document.getElementById('iq-diff-select');
+  const practicedSel = document.getElementById('iq-practiced-select');
+  topicSel.value     = filterTopic;
+  diffSel.value      = filterDiff;
+  practicedSel.value = filterPracticed;
+
+  const rebuild = () => buildInterviewQuestions(topicSel.value, diffSel.value, practicedSel.value);
+  topicSel.addEventListener('change', rebuild);
+  diffSel.addEventListener('change', rebuild);
+  practicedSel.addEventListener('change', rebuild);
 }
 
 // ---- CODE SNIPPETS ----
@@ -832,7 +977,7 @@ function buildSnippets() {
               <span class="snippet-toggle">▾</span>
             </div>
             <div class="snippet-body">
-              <pre class="snippet-code">${escapeHtml(s.code)}</pre>
+              <pre class="snippet-code"><code class="language-${s.language === 'sql' ? 'sql' : s.language === 'bash' ? 'bash' : s.language === 'yaml' ? 'yaml' : 'python'}">${escapeHtml(s.code)}</code></pre>
               <div class="snippet-explanation">${s.explanation}</div>
             </div>
           </div>`).join('')}
@@ -847,8 +992,10 @@ function buildSnippets() {
     <button class="filter-btn" id="collapse-all-btn">Collapse All</button>`;
   container.prepend(expandAllBtn);
 
-  document.getElementById('expand-all-btn').addEventListener('click',()=>
-    container.querySelectorAll('.snippet-card').forEach(c=>c.classList.add('expanded')));
+  document.getElementById('expand-all-btn').addEventListener('click',()=>{
+    container.querySelectorAll('.snippet-card').forEach(c=>c.classList.add('expanded'));
+    prismHighlight(container);
+  });
   document.getElementById('collapse-all-btn').addEventListener('click',()=>
     container.querySelectorAll('.snippet-card').forEach(c=>c.classList.remove('expanded')));
 
@@ -856,6 +1003,7 @@ function buildSnippets() {
     card.querySelector('.snippet-header').addEventListener('click',e=>{
       if (e.target.classList.contains('copy-btn')) return;
       card.classList.toggle('expanded');
+      if (card.classList.contains('expanded')) prismHighlight(card);
     });
   });
 
@@ -883,6 +1031,10 @@ function escapeHtml(s) {
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+function prismHighlight(el) {
+  if (typeof Prism !== 'undefined') Prism.highlightAllUnder(el);
+}
+
 // ---- SEARCH ----
 let searchIndex = [];
 
@@ -895,15 +1047,30 @@ function buildSearchIndex() {
   ];
 }
 
-function openSearch()  {
-  document.getElementById('search-overlay').classList.add('visible');
-  setTimeout(()=>document.getElementById('search-field').focus(),50);
+function openSearch() {
+  const overlay = document.getElementById('search-overlay');
+  overlay.classList.add('visible');
+  overlay.removeAttribute('aria-hidden');
+  setTimeout(() => document.getElementById('search-field').focus(), 50);
 }
 function closeSearch() {
-  document.getElementById('search-overlay').classList.remove('visible');
-  document.getElementById('search-field').value='';
-  document.getElementById('search-results').innerHTML='';
+  const overlay = document.getElementById('search-overlay');
+  overlay.classList.remove('visible');
+  overlay.setAttribute('aria-hidden', 'true');
+  document.getElementById('search-field').value = '';
+  document.getElementById('search-results').innerHTML = '';
 }
+
+// Focus trap inside search modal
+document.addEventListener('keydown', e => {
+  const overlay = document.getElementById('search-overlay');
+  if (!overlay || !overlay.classList.contains('visible')) return;
+  if (e.key !== 'Tab') return;
+  const focusable = overlay.querySelectorAll('input, button, [tabindex]:not([tabindex="-1"])');
+  const first = focusable[0], last = focusable[focusable.length - 1];
+  if (e.shiftKey) { if (document.activeElement === first) { e.preventDefault(); last.focus(); } }
+  else            { if (document.activeElement === last)  { e.preventDefault(); first.focus(); } }
+});
 function doSearch(query) {
   const q = query.trim().toLowerCase();
   const el = document.getElementById('search-results');
@@ -1003,18 +1170,19 @@ function buildSqlFundamentals(filter) {
       <div class="sql-explanation">${t.explanation}</div>
       <div class="sql-example">
         <div class="sql-label">Example</div>
-        <pre><code>${escHtml(t.example)}</code></pre>
+        <pre><code class="language-sql">${escHtml(t.example)}</code></pre>
       </div>
       <div class="sql-practice">
         <div class="sql-label">Practice Problem</div>
         <p class="sql-practice-text">${t.practice}</p>
         <button class="sql-reveal-btn" onclick="toggleSqlAnswer(this)">Show Answer</button>
         <div class="sql-answer hidden">
-          <pre><code>${escHtml(t.answer)}</code></pre>
+          <pre><code class="language-sql">${escHtml(t.answer)}</code></pre>
         </div>
       </div>
     </div>
   `).join('');
+  prismHighlight(el);
 }
 function escHtml(s) {
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -1047,10 +1215,11 @@ function buildPythonDE() {
       <ul class="py-points">${m.points.map(p=>`<li>${p}</li>`).join('')}</ul>
       <div class="py-code-block">
         <div class="py-code-label">Code Example</div>
-        <pre><code>${escHtml(m.code)}</code></pre>
+        <pre><code class="language-python">${escHtml(m.code)}</code></pre>
       </div>
     </div>
   `).join('');
+  prismHighlight(el);
 }
 
 // ---- SETUP GUIDES ----
@@ -1073,7 +1242,7 @@ function buildSetupGuides() {
             <div class="guide-step-num">${i+1}</div>
             <div class="guide-step-body">
               <div class="guide-step-title">${s.title}</div>
-              ${s.commands && s.commands.length ? `<pre class="guide-commands"><code>${s.commands.map(c=>escHtml(c)).join('\n')}</code></pre>` : ''}
+              ${s.commands && s.commands.length ? `<pre class="guide-commands"><code class="language-bash">${s.commands.map(c=>escHtml(c)).join('\n')}</code></pre>` : ''}
               ${s.note ? `<div class="guide-note">${s.note}</div>` : ''}
             </div>
           </div>
@@ -1083,6 +1252,7 @@ function buildSetupGuides() {
   `).join('');
   html += '</div>';
   el.innerHTML = html;
+  prismHighlight(el);
 }
 
 // ---- GUIDED PROJECTS ----
@@ -1120,12 +1290,13 @@ function buildProjects() {
               <span class="project-step-title">${s.title}</span>
             </div>
             <p class="project-step-detail">${s.detail}</p>
-            ${s.code ? `<pre class="project-code"><code>${escHtml(s.code)}</code></pre>` : ''}
+            ${s.code ? `<pre class="project-code"><code class="language-python">${escHtml(s.code)}</code></pre>` : ''}
           </div>
         `).join('')}
       </div>
     </div>
   `).join('');
+  prismHighlight(el);
 }
 
 // ---- DE EXPERT BOT ----
@@ -1378,26 +1549,13 @@ function buildBot() {
 
 // ---- INIT ----
 document.addEventListener('DOMContentLoaded', ()=>{
-  buildKnowledge();
-  buildCorrections();
-  buildGaps();
-  buildConnections();
-  buildReadiness();
-  buildFlashcards();
-  buildInterviewQuestions();
-  buildSnippets();
   buildBot();
-  buildRoadmap();
-  buildSqlFundamentals();
-  buildPythonDE();
-  buildSetupGuides();
-  buildProjects();
   buildSearchIndex();
   buildHeroStats();
   buildDailyRec();
   updateSidebarScore();
-  setupGapFilters();
-  setupSqlFilters();
+  recordActivity();
+  buildStreakBadge();
 
   document.querySelectorAll('.nav-item').forEach(item=>
     item.addEventListener('click',()=>navigate(item.dataset.nav)));
