@@ -335,15 +335,36 @@ function buildKnowledge() {
 
   wireKnowledgeCards(container);
 
-  // Expand-all / Collapse-all for Knowledge Map
+  // Expand-all / Collapse-all + local search bar
   const ctrlRow = document.createElement('div');
-  ctrlRow.style.cssText = 'display:flex;gap:8px;margin-bottom:16px;';
-  ctrlRow.innerHTML = '<button class="filter-btn" id="km-expand-all">Expand All</button><button class="filter-btn" id="km-collapse-all">Collapse All</button>';
+  ctrlRow.className = 'km-controls';
+  ctrlRow.innerHTML = `
+    <div class="km-search-wrap">
+      <input type="text" class="km-search" id="km-search" placeholder="Filter topics…" autocomplete="off"/>
+    </div>
+    <div class="km-expand-btns">
+      <button class="filter-btn" id="km-expand-all">Expand All</button>
+      <button class="filter-btn" id="km-collapse-all">Collapse All</button>
+    </div>`;
   container.prepend(ctrlRow);
+
   document.getElementById('km-expand-all').addEventListener('click', () =>
-    container.querySelectorAll('.knowledge-card').forEach(c => c.classList.add('expanded')));
+    container.querySelectorAll('.knowledge-card:not([style*="display: none"])').forEach(c => c.classList.add('expanded')));
   document.getElementById('km-collapse-all').addEventListener('click', () =>
     container.querySelectorAll('.knowledge-card').forEach(c => c.classList.remove('expanded')));
+
+  document.getElementById('km-search').addEventListener('input', e => {
+    const q = e.target.value.toLowerCase().trim();
+    container.querySelectorAll('.knowledge-card').forEach(card => {
+      const text = card.textContent.toLowerCase();
+      card.style.display = q === '' || text.includes(q) ? '' : 'none';
+    });
+    // Hide sections where all cards are hidden
+    container.querySelectorAll('.knowledge-section').forEach(sec => {
+      const visible = [...sec.querySelectorAll('.knowledge-card')].some(c => c.style.display !== 'none');
+      sec.style.display = visible ? '' : 'none';
+    });
+  });
 }
 
 function refreshStudiedSection() {
@@ -1859,6 +1880,19 @@ document.addEventListener('DOMContentLoaded', ()=>{
       });
       overlay.addEventListener('click', e => { if (e.target === overlay) closeOnboarding(); });
     }
+  }
+
+  // Dynamic connections badge
+  const connBadge = document.getElementById('connections-badge');
+  if (connBadge && typeof CONNECTIONS !== 'undefined') connBadge.textContent = CONNECTIONS.length;
+
+  // ---- BACK TO TOP ----
+  const bttBtn = document.getElementById('back-to-top');
+  if (bttBtn) {
+    window.addEventListener('scroll', () => {
+      bttBtn.classList.toggle('visible', window.scrollY > 400);
+    }, { passive: true });
+    bttBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
   }
 
   // ---- PROGRESS EXPORT / IMPORT ----
