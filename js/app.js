@@ -307,6 +307,16 @@ function buildKnowledge() {
   }).join('');
 
   wireKnowledgeCards(container);
+
+  // Expand-all / Collapse-all for Knowledge Map
+  const ctrlRow = document.createElement('div');
+  ctrlRow.style.cssText = 'display:flex;gap:8px;margin-bottom:16px;';
+  ctrlRow.innerHTML = '<button class="filter-btn" id="km-expand-all">Expand All</button><button class="filter-btn" id="km-collapse-all">Collapse All</button>';
+  container.prepend(ctrlRow);
+  document.getElementById('km-expand-all').addEventListener('click', () =>
+    container.querySelectorAll('.knowledge-card').forEach(c => c.classList.add('expanded')));
+  document.getElementById('km-collapse-all').addEventListener('click', () =>
+    container.querySelectorAll('.knowledge-card').forEach(c => c.classList.remove('expanded')));
 }
 
 function refreshStudiedSection() {
@@ -1058,7 +1068,7 @@ function buildInterviewQuestions(filterTopic='all', filterDiff='all', filterPrac
           </div>
         </div>
         <div class="iq-card-body">
-          <div class="iq-answer">${q.a}</div>
+          <div class="iq-answer">${renderMarkdown(q.a)}</div>
           <div class="iq-tip">${q.tip}</div>
           <div class="mark-action-row" style="margin-top:14px">
             <button class="mark-practiced-btn ${done ? 'done' : ''}" data-topic="${q.topicId}" data-gidx="${q.globalIdx}">
@@ -1443,125 +1453,108 @@ function buildProjects() {
 }
 
 // ---- DE EXPERT BOT ----
+// ---- MARKDOWN RENDERER (shared by bot + IQ answers) ----
+function escapeHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function inlineMarkdown(text) {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+    .replace(/`([^`]+)`/g, '<code class="bot-inline-code">$1</code>');
+}
+
+function renderTable(lines) {
+  const rows = lines.filter(l => !/^\|[-|\s:]+\|$/.test(l.trim()));
+  if (rows.length === 0) return '';
+  let html = '<div class="bot-table-wrap"><table class="bot-table">';
+  rows.forEach((row, idx) => {
+    const cells = row.split('|').filter((_, ci) => ci > 0 && ci < row.split('|').length - 1);
+    const tag = idx === 0 ? 'th' : 'td';
+    html += '<tr>' + cells.map(c => `<${tag}>${inlineMarkdown(c.trim())}</${tag}>`).join('') + '</tr>';
+  });
+  html += '</table></div>';
+  return html;
+}
+
+function renderMarkdown(text) {
+  const codeBlocks = [];
+  text = text.replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) => {
+    const idx = codeBlocks.length;
+    const cls = lang ? ` class="language-${lang}"` : '';
+    codeBlocks.push(`<pre class="bot-code"><code${cls}>${escapeHtml(code.trim())}</code></pre>`);
+    return `\x00CODE${idx}\x00`;
+  });
+
+  const lines = text.split('\n');
+  const out = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i];
+
+    if (/^\x00CODE\d+\x00$/.test(line.trim())) {
+      const idx = parseInt(line.trim().replace(/\x00CODE(\d+)\x00/, '$1'));
+      out.push(codeBlocks[idx]);
+      i++;
+      continue;
+    }
+
+    if (/^(-{3,}|={3,})$/.test(line.trim())) {
+      out.push('<hr class="bot-hr">');
+      i++;
+      continue;
+    }
+
+    const headM = line.match(/^(#{1,3})\s+(.+)$/);
+    if (headM) {
+      const lvl = headM[1].length + 2;
+      out.push(`<h${lvl} class="bot-heading">${inlineMarkdown(headM[2])}</h${lvl}>`);
+      i++;
+      continue;
+    }
+
+    if (line.trim().startsWith('|')) {
+      const tableLines = [];
+      while (i < lines.length && lines[i].trim().startsWith('|')) { tableLines.push(lines[i]); i++; }
+      out.push(renderTable(tableLines));
+      continue;
+    }
+
+    if (/^(\s*[-*])\s/.test(line)) {
+      const listItems = [];
+      while (i < lines.length && /^(\s*[-*])\s/.test(lines[i])) {
+        listItems.push(`<li>${inlineMarkdown(lines[i].replace(/^\s*[-*]\s/, ''))}</li>`);
+        i++;
+      }
+      out.push(`<ul class="bot-list">${listItems.join('')}</ul>`);
+      continue;
+    }
+
+    if (/^\d+\.\s/.test(line)) {
+      const listItems = [];
+      while (i < lines.length && /^\d+\.\s/.test(lines[i])) {
+        listItems.push(`<li>${inlineMarkdown(lines[i].replace(/^\d+\.\s/, ''))}</li>`);
+        i++;
+      }
+      out.push(`<ol class="bot-list">${listItems.join('')}</ol>`);
+      continue;
+    }
+
+    if (line.trim() === '') { i++; continue; }
+    out.push(`<p class="bot-p">${inlineMarkdown(line)}</p>`);
+    i++;
+  }
+
+  return out.join('');
+}
+
 function buildBot() {
   const messagesEl = document.getElementById('bot-messages');
   const inputEl    = document.getElementById('bot-input');
   const sendBtn    = document.getElementById('bot-send-btn');
   if (!messagesEl || !inputEl || !sendBtn) return;
-
-  function escapeHtml(s) {
-    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  }
-
-  function renderMarkdown(text) {
-    // 1. Extract code blocks → placeholders to protect them from other transforms
-    const codeBlocks = [];
-    text = text.replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) => {
-      const idx = codeBlocks.length;
-      codeBlocks.push(`<pre class="bot-code"><code>${escapeHtml(code.trim())}</code></pre>`);
-      return `\x00CODE${idx}\x00`;
-    });
-
-    // 2. Split into lines for block-level processing
-    const lines = text.split('\n');
-    const out = [];
-    let i = 0;
-
-    while (i < lines.length) {
-      const line = lines[i];
-
-      // Code placeholder
-      if (/^\x00CODE\d+\x00$/.test(line.trim())) {
-        const idx = parseInt(line.trim().replace(/\x00CODE(\d+)\x00/, '$1'));
-        out.push(codeBlocks[idx]);
-        i++;
-        continue;
-      }
-
-      // Horizontal rule: --- or ===
-      if (/^(-{3,}|={3,})$/.test(line.trim())) {
-        out.push('<hr class="bot-hr">');
-        i++;
-        continue;
-      }
-
-      // Heading: ### or ## or #
-      const headM = line.match(/^(#{1,3})\s+(.+)$/);
-      if (headM) {
-        const lvl = headM[1].length + 2; // h3,h4,h5
-        out.push(`<h${lvl} class="bot-heading">${inlineMarkdown(headM[2])}</h${lvl}>`);
-        i++;
-        continue;
-      }
-
-      // Table: starts with |
-      if (line.trim().startsWith('|')) {
-        const tableLines = [];
-        while (i < lines.length && lines[i].trim().startsWith('|')) {
-          tableLines.push(lines[i]);
-          i++;
-        }
-        out.push(renderTable(tableLines));
-        continue;
-      }
-
-      // Bullet list: - or *
-      if (/^(\s*[-*])\s/.test(line)) {
-        const listItems = [];
-        while (i < lines.length && /^(\s*[-*])\s/.test(lines[i])) {
-          listItems.push(`<li>${inlineMarkdown(lines[i].replace(/^\s*[-*]\s/, ''))}</li>`);
-          i++;
-        }
-        out.push(`<ul class="bot-list">${listItems.join('')}</ul>`);
-        continue;
-      }
-
-      // Numbered list: 1. 2. etc.
-      if (/^\d+\.\s/.test(line)) {
-        const listItems = [];
-        while (i < lines.length && /^\d+\.\s/.test(lines[i])) {
-          listItems.push(`<li>${inlineMarkdown(lines[i].replace(/^\d+\.\s/, ''))}</li>`);
-          i++;
-        }
-        out.push(`<ol class="bot-list">${listItems.join('')}</ol>`);
-        continue;
-      }
-
-      // Empty line → paragraph break
-      if (line.trim() === '') {
-        i++;
-        continue;
-      }
-
-      // Regular paragraph line
-      out.push(`<p class="bot-p">${inlineMarkdown(line)}</p>`);
-      i++;
-    }
-
-    return out.join('');
-  }
-
-  function inlineMarkdown(text) {
-    // Restore code placeholders inline (shouldn't happen but guard)
-    return text
-      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*([^*]+)\*/g, '<em>$1</em>')
-      .replace(/`([^`]+)`/g, '<code class="bot-inline-code">$1</code>');
-  }
-
-  function renderTable(lines) {
-    // Filter out separator row (|---|---|)
-    const rows = lines.filter(l => !/^\|[-|\s:]+\|$/.test(l.trim()));
-    if (rows.length === 0) return '';
-    let html = '<div class="bot-table-wrap"><table class="bot-table">';
-    rows.forEach((row, idx) => {
-      const cells = row.split('|').filter((_, ci) => ci > 0 && ci < row.split('|').length - 1);
-      const tag = idx === 0 ? 'th' : 'td';
-      html += '<tr>' + cells.map(c => `<${tag}>${inlineMarkdown(c.trim())}</${tag}>`).join('') + '</tr>';
-    });
-    html += '</table></div>';
-    return html;
-  }
 
   function addCopyButtons(container) {
     container.querySelectorAll('pre.bot-code').forEach(pre => {

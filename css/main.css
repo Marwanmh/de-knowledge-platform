@@ -543,13 +543,18 @@ body::after {
 }
 
 .knowledge-card-body {
-  display: none;
-  padding: 0 24px 24px;
-  border-top: 1px solid var(--border);
-  padding-top: 20px;
+  max-height: 0;
+  overflow: hidden;
+  padding: 0 24px;
+  border-top: 1px solid transparent;
+  transition: max-height 0.35s ease, padding 0.35s ease, border-color 0.35s ease;
 }
 
-.knowledge-card.expanded .knowledge-card-body { display: block; }
+.knowledge-card.expanded .knowledge-card-body {
+  max-height: 2000px;
+  padding: 20px 24px 24px;
+  border-top-color: var(--border);
+}
 
 .knowledge-point {
   margin-bottom: 14px;
@@ -814,12 +819,18 @@ body::after {
 .gap-card.expanded .gap-toggle { transform: rotate(180deg); }
 
 .gap-card-body {
-  display: none;
-  padding: 0 24px 24px;
-  border-top: 1px solid var(--border);
+  max-height: 0;
+  overflow: hidden;
+  padding: 0 24px;
+  border-top: 1px solid transparent;
+  transition: max-height 0.35s ease, padding 0.35s ease, border-color 0.35s ease;
 }
 
-.gap-card.expanded .gap-card-body { display: block; }
+.gap-card.expanded .gap-card-body {
+  max-height: 3000px;
+  padding: 0 24px 24px;
+  border-top-color: var(--border);
+}
 
 .gap-why {
   margin: 16px 0;
@@ -1693,12 +1704,18 @@ body::after {
 .iq-card.expanded .iq-toggle { transform: rotate(180deg); }
 
 .iq-card-body {
-  display: none;
-  padding: 0 20px 20px 48px;
-  border-top: 1px solid var(--border);
+  max-height: 0;
+  overflow: hidden;
+  padding: 0 20px 0 48px;
+  border-top: 1px solid transparent;
+  transition: max-height 0.35s ease, padding 0.35s ease, border-color 0.35s ease;
 }
 
-.iq-card.expanded .iq-card-body { display: block; }
+.iq-card.expanded .iq-card-body {
+  max-height: 2000px;
+  padding: 0 20px 20px 48px;
+  border-top-color: var(--border);
+}
 
 .iq-answer {
   font-size: 14px;
@@ -1823,10 +1840,12 @@ body::after {
 .snippet-card.expanded .snippet-toggle { transform: rotate(180deg); }
 
 .snippet-body {
-  display: none;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s ease;
 }
 
-.snippet-card.expanded .snippet-body { display: block; }
+.snippet-card.expanded .snippet-body { max-height: 3000px; }
 
 .snippet-code {
   margin: 0;
@@ -2927,7 +2946,7 @@ mark {
   .knowledge-section { margin-bottom: 28px; }
   .knowledge-card-header { padding: 16px 14px; }
   .knowledge-card-summary { padding: 0 14px 12px; }
-  .knowledge-card-body { padding: 16px 14px 14px; }
+  .knowledge-card.expanded .knowledge-card-body { padding: 16px 14px 14px; }
   .knowledge-tags { padding: 10px 14px; }
   .confidence-row { padding: 10px 14px; }
   .eli5-panel { margin: 0 14px 12px; }
@@ -2935,7 +2954,7 @@ mark {
 
   /* ---- Gap cards: fix inner padding ---- */
   .gap-card-header { padding: 14px; }
-  .gap-card-body { padding: 0 14px 14px; }
+  .gap-card.expanded .gap-card-body { padding: 0 14px 14px; }
   .gap-card-title { font-size: 14px; }
 
   /* ---- Selects: full width on mobile ---- */
