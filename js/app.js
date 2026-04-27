@@ -377,7 +377,8 @@ function buildKnowledgeCard(item) {
             <div class="point-text">${p.text}</div>
           </div>`).join('')}
       </div>
-      <div class="knowledge-tags">${item.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+      <div class="knowledge-tags">${item.tags.map(t=>`<span class="tag" role="button" tabindex="0" title="Search: ${t}">${t}</span>`).join('')}</div>
+      ${item.relatedIds && item.relatedIds.length ? `<div class="related-chips"><span class="related-label">Related:</span>${item.relatedIds.map(rid=>`<span class="related-chip" data-id="${rid}">${(TOPIC_MAP[rid]||{}).title||rid} ↗</span>`).join('')}</div>` : ''}
       <div class="confidence-row">
         <span class="confidence-label">Confidence</span>
         <div class="star-rating" role="radiogroup" aria-label="Confidence rating">${[1,2,3,4,5].map(n=>`<span class="star" data-star="${n}" role="radio" aria-label="${n} star" tabindex="0">★</span>`).join('')}</div>
@@ -395,6 +396,25 @@ function wireKnowledgeCards(container) {
     card.querySelector('.knowledge-card-header').addEventListener('click', e => {
       if (e.target.closest('.eli5-toggle-btn')) return;
       card.classList.toggle('expanded');
+    });
+
+    // P1a: tag → search
+    card.querySelectorAll('.tag').forEach(tag => {
+      const activate = () => { openSearch(); const f = document.getElementById('search-field'); if (f) { f.value = tag.textContent; doSearch(tag.textContent); } };
+      tag.addEventListener('click', e => { e.stopPropagation(); activate(); });
+      tag.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(); } });
+    });
+
+    // P1b: relatedIds → navigate to card
+    card.querySelectorAll('.related-chip').forEach(chip => {
+      chip.addEventListener('click', e => {
+        e.stopPropagation();
+        navigate('knowledge');
+        setTimeout(() => {
+          const target = document.querySelector(`.knowledge-card[data-id="${chip.dataset.id}"]`);
+          if (target) { target.classList.add('expanded'); target.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+        }, 200);
+      });
     });
 
     // ELI5 — restore state + wire toggle
@@ -500,9 +520,9 @@ function buildGaps(filter = 'all') {
     const done  = isGapStudied(gap.id);
     const pts   = GAP_SCORE_WEIGHTS[gap.id] || 0;
     const isExp = GAP_EXPANDED.has(gap.id);
-    const connectNames = gap.connectsTo.map(id => {
-      const f = KNOWLEDGE.find(k=>k.id===id)||GAPS.find(g=>g.id===id);
-      return f ? f.title : id;
+    const connectItems = gap.connectsTo.map(cid => {
+      const f = KNOWLEDGE.find(k=>k.id===cid)||GAPS.find(g=>g.id===cid);
+      return { id: cid, title: f ? f.title : cid, isKnowledge: !!KNOWLEDGE.find(k=>k.id===cid) };
     });
     return `
       <div class="gap-card ${done?'studied':''} ${isExp?'expanded':''}" data-id="${gap.id}" data-priority="${gap.priority}">
@@ -515,7 +535,7 @@ function buildGaps(filter = 'all') {
             <div class="gap-card-subtitle">${gap.subtitle}</div>
             <div class="gap-connects">
               <span class="gap-connects-label">Connects to:</span>
-              ${connectNames.map(n=>`<span class="connects-tag">${n}</span>`).join('')}
+              ${connectItems.map(c=>`<span class="connects-tag" data-id="${c.id}" data-is-knowledge="${c.isKnowledge}" role="button" tabindex="0" title="Go to ${c.title}">${c.title} ↗</span>`).join('')}
             </div>
           </div>
           <div class="gap-card-right">
@@ -559,6 +579,27 @@ function buildGaps(filter = 'all') {
     btn.addEventListener('click', e => { e.stopPropagation(); markGapStudied(btn.dataset.id); }));
   container.querySelectorAll('.unmark-btn').forEach(btn =>
     btn.addEventListener('click', e => { e.stopPropagation(); markGapStudied(btn.dataset.id); }));
+
+  // P1c: connects-tag → navigate to knowledge card
+  container.querySelectorAll('.connects-tag').forEach(tag => {
+    const go = () => {
+      if (tag.dataset.isKnowledge === 'true') {
+        navigate('knowledge');
+        setTimeout(() => {
+          const target = document.querySelector(`.knowledge-card[data-id="${tag.dataset.id}"]`);
+          if (target) { target.classList.add('expanded'); target.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+        }, 200);
+      } else {
+        navigate('gaps');
+        setTimeout(() => {
+          const target = document.querySelector(`.gap-card[data-id="${tag.dataset.id}"]`);
+          if (target) { target.classList.add('expanded'); target.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+        }, 200);
+      }
+    };
+    tag.addEventListener('click', e => { e.stopPropagation(); go(); });
+    tag.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
+  });
 }
 
 function markGapStudied(id) {
@@ -1532,6 +1573,34 @@ function buildBot() {
   if (clearBtn) {
     clearBtn.addEventListener('click', () => {
       messagesEl.innerHTML = '';
+      // Reset all bot memory state
+      BOT_LAST_TOPIC = null;
+      BOT_LAST_ENTRY = null;
+      BOT_HISTORY.splice(0);
+      BOT_EXCHANGE.splice(0);
+      Object.keys(BOT_ASPECTS).forEach(k => delete BOT_ASPECTS[k]);
+      BOT_QUIZ_PENDING = null;
+      BOT_QUIZ_IDX = null;
+      BOT_QUIZ_RECENT.clear();
+      // Reset suggestion chips to defaults
+      const suggestionsEl = document.getElementById('bot-suggestions');
+      if (suggestionsEl) {
+        suggestionsEl.innerHTML = [
+          ['What is data engineering?','What is DE?'],
+          ['Explain window functions','Window functions'],
+          ['ETL vs ELT difference','ETL vs ELT'],
+          ['How do I connect Python to PostgreSQL?','Python → PostgreSQL'],
+          ['What is idempotency?','Idempotency'],
+          ['Explain Airflow DAG','Airflow DAG'],
+          ['How to prepare for a data engineer interview?','Interview tips'],
+          ['What is a star schema?','Star schema'],
+          ['Quiz me on SQL','Quiz: SQL'],
+          ['Quiz me on data engineering','Quiz: DE concepts'],
+        ].map(([q,label]) => `<span class="bot-sugg" data-q="${q}">${label}</span>`).join('');
+        suggestionsEl.querySelectorAll('.bot-sugg').forEach(el => {
+          el.addEventListener('click', () => { inputEl.value = el.dataset.q; handleSend(); });
+        });
+      }
       addMessage('Chat cleared. Ask me anything about Data Engineering, SQL, Python, or tools.', 'bot');
     });
   }

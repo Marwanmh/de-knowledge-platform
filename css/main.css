@@ -761,7 +761,34 @@ body::after {
   background: rgba(34,211,238,0.08);
   color: var(--cyan);
   border: 1px solid rgba(34,211,238,0.15);
+  cursor: pointer;
+  transition: background 0.2s;
 }
+.connects-tag:hover { background: rgba(34,211,238,0.18); }
+
+.related-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 24px 0;
+}
+.related-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+.related-chip {
+  font-size: 11px;
+  padding: 2px 10px;
+  border-radius: 20px;
+  background: rgba(16,185,129,0.1);
+  color: var(--green);
+  border: 1px solid rgba(16,185,129,0.2);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.related-chip:hover { background: rgba(16,185,129,0.22); }
 
 .gap-card-right {
   display: flex;
