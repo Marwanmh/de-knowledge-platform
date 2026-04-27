@@ -2404,20 +2404,64 @@ mark {
   color: var(--text-muted);
   margin-bottom: 10px;
 }
-.roadmap-topics-list {
+.roadmap-progress-bar-wrap {
+  margin: 0 0 16px;
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  align-items: center;
+  gap: 12px;
+}
+.roadmap-progress-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  min-width: 110px;
+}
+.roadmap-progress-track {
+  flex: 1;
+  height: 6px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.roadmap-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--purple-light), var(--cyan));
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+
+.roadmap-topics-list {
   list-style: none;
   padding: 0; margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
-.roadmap-topics-list li {
-  background: rgba(255,255,255,0.04);
-  border: 1px solid var(--border);
+.roadmap-topic-item {
   border-radius: 8px;
-  padding: 4px 12px;
-  font-size: 12px;
+  padding: 0;
+  transition: background 0.2s;
+}
+.roadmap-topic-item label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 6px 10px;
+  cursor: pointer;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  font-size: 13px;
   color: var(--text-secondary);
+  transition: background 0.2s;
+}
+.roadmap-topic-item label:hover { background: rgba(255,255,255,0.07); }
+.roadmap-cb { accent-color: var(--purple-light); width: 15px; height: 15px; flex-shrink: 0; margin-top: 1px; cursor: pointer; }
+.roadmap-topic-item.topic-done label {
+  color: var(--text-muted);
+  text-decoration: line-through;
+  background: rgba(16,185,129,0.06);
+  border-color: rgba(16,185,129,0.2);
 }
 
 .roadmap-resources { margin-bottom: 20px; }
@@ -2555,6 +2599,21 @@ mark {
 }
 .sql-reveal-btn:hover { border-color: var(--purple-light); color: var(--purple-light); }
 .sql-answer.hidden { display: none; }
+
+.sql-practice-actions { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
+.sql-solved-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 18px;
+  font-size: 13px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.sql-solved-btn:hover { border-color: var(--green); color: var(--green); }
+.sql-solved-btn.solved { border-color: var(--green); color: var(--green); background: rgba(16,185,129,0.08); }
+.sql-topic-card.sql-solved { border-left: 3px solid var(--green); }
 
 /* ===================================================
    PYTHON FOR DE

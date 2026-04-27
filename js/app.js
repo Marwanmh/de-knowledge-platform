@@ -1271,11 +1271,18 @@ function setupSqlFilters() {
 }
 
 // ---- ROADMAP ----
+function isTopicDone(phaseId, idx) { return localStorage.getItem(`mk_rm_${phaseId}_${idx}`) === '1'; }
+function setTopicDone(phaseId, idx, v) { localStorage.setItem(`mk_rm_${phaseId}_${idx}`, v ? '1' : '0'); }
+
 function buildRoadmap() {
   const el = document.getElementById('roadmap-content');
   if (!el || typeof ROADMAP_PHASES === 'undefined') return;
-  el.innerHTML = ROADMAP_PHASES.map(p => `
-    <div class="roadmap-phase phase-color-${p.color}">
+  el.innerHTML = ROADMAP_PHASES.map(p => {
+    const done = p.topics.filter((_, i) => isTopicDone(p.id, i)).length;
+    const total = p.topics.length;
+    const pct = total ? Math.round(done / total * 100) : 0;
+    return `
+    <div class="roadmap-phase phase-color-${p.color}" data-phase-id="${p.id}">
       <div class="roadmap-phase-header">
         <div class="roadmap-phase-num">Phase ${p.phase}</div>
         <div class="roadmap-phase-emoji">${p.emoji}</div>
@@ -1288,10 +1295,22 @@ function buildRoadmap() {
           <span class="roadmap-priority roadmap-priority-${p.priority}">${p.priority}</span>
         </div>
       </div>
+      <div class="roadmap-progress-bar-wrap">
+        <div class="roadmap-progress-label">${done}/${total} topics done</div>
+        <div class="roadmap-progress-track"><div class="roadmap-progress-fill" style="width:${pct}%"></div></div>
+      </div>
       <p class="roadmap-desc">${p.description}</p>
       <div class="roadmap-topics">
         <div class="roadmap-topics-label">Topics</div>
-        <ul class="roadmap-topics-list">${p.topics.map(t=>`<li>${t}</li>`).join('')}</ul>
+        <ul class="roadmap-topics-list">${p.topics.map((t, i) => {
+          const checked = isTopicDone(p.id, i);
+          return `<li class="roadmap-topic-item ${checked?'topic-done':''}">
+            <label>
+              <input type="checkbox" class="roadmap-cb" data-phase="${p.id}" data-idx="${i}" ${checked?'checked':''}>
+              <span>${t}</span>
+            </label>
+          </li>`;
+        }).join('')}</ul>
       </div>
       <div class="roadmap-resources">
         <div class="roadmap-topics-label">Resources</div>
@@ -1302,8 +1321,27 @@ function buildRoadmap() {
         <span><strong>Checkpoint:</strong> ${p.checkpoint}</span>
       </div>
       ${p.linkedSection ? `<button class="roadmap-goto-btn" onclick="navigate('${p.linkedSection}')">Go to ${p.title} →</button>` : ''}
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
+
+  el.querySelectorAll('.roadmap-cb').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const phaseId = cb.dataset.phase;
+      const idx = parseInt(cb.dataset.idx);
+      setTopicDone(phaseId, idx, cb.checked);
+      const li = cb.closest('.roadmap-topic-item');
+      if (li) li.classList.toggle('topic-done', cb.checked);
+      // Update progress bar
+      const phaseEl = cb.closest('.roadmap-phase');
+      const allCbs = phaseEl.querySelectorAll('.roadmap-cb');
+      const doneCount = [...allCbs].filter(c => c.checked).length;
+      const pct = Math.round(doneCount / allCbs.length * 100);
+      const fill = phaseEl.querySelector('.roadmap-progress-fill');
+      const label = phaseEl.querySelector('.roadmap-progress-label');
+      if (fill) fill.style.width = pct + '%';
+      if (label) label.textContent = `${doneCount}/${allCbs.length} topics done`;
+    });
+  });
 }
 
 // ---- SQL FUNDAMENTALS ----
@@ -1314,7 +1352,7 @@ function buildSqlFundamentals(filter) {
     ? SQL_TOPICS.filter(t => String(t.tier) === String(filter))
     : SQL_TOPICS;
   el.innerHTML = topics.map(t => `
-    <div class="sql-topic-card tier-${t.tier}">
+    <div class="sql-topic-card tier-${t.tier} ${isSqlSolved(t.id)?'sql-solved':''}"
       <div class="sql-topic-header">
         <span class="sql-tier-badge tier-badge-${t.tier}">${t.tierLabel}</span>
         <span class="sql-topic-title">${t.title}</span>
@@ -1328,7 +1366,12 @@ function buildSqlFundamentals(filter) {
       <div class="sql-practice">
         <div class="sql-label">Practice Problem</div>
         <p class="sql-practice-text">${t.practice}</p>
-        <button class="sql-reveal-btn" onclick="toggleSqlAnswer(this)">Show Answer</button>
+        <div class="sql-practice-actions">
+          <button class="sql-reveal-btn" onclick="toggleSqlAnswer(this)">Show Answer</button>
+          <button class="sql-solved-btn ${isSqlSolved(t.id)?'solved':''}" data-id="${t.id}" onclick="toggleSqlSolved(this)">
+            ${isSqlSolved(t.id)?'✓ Solved':'Mark as Solved'}
+          </button>
+        </div>
         <div class="sql-answer hidden">
           <pre><code class="language-sql">${escHtml(t.answer)}</code></pre>
         </div>
@@ -1340,8 +1383,10 @@ function buildSqlFundamentals(filter) {
 function escHtml(s) {
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
+function isSqlSolved(id)   { return localStorage.getItem(`mk_sql_${id}`) === '1'; }
+function setSqlSolved(id,v){ localStorage.setItem(`mk_sql_${id}`, v ? '1' : '0'); }
 function toggleSqlAnswer(btn) {
-  const ans = btn.nextElementSibling;
+  const ans = btn.closest('.sql-practice').querySelector('.sql-answer');
   if (ans.classList.contains('hidden')) {
     ans.classList.remove('hidden');
     btn.textContent = 'Hide Answer';
@@ -1349,6 +1394,15 @@ function toggleSqlAnswer(btn) {
     ans.classList.add('hidden');
     btn.textContent = 'Show Answer';
   }
+}
+function toggleSqlSolved(btn) {
+  const id = btn.dataset.id;
+  const solved = !isSqlSolved(id);
+  setSqlSolved(id, solved);
+  btn.classList.toggle('solved', solved);
+  btn.textContent = solved ? '✓ Solved' : 'Mark as Solved';
+  const card = btn.closest('.sql-topic-card');
+  if (card) card.classList.toggle('sql-solved', solved);
 }
 
 // ---- PYTHON FOR DE ----
