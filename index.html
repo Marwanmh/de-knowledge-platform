@@ -4,6 +4,12 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
   <title>Marwan's Data Engineering Hub</title>
+  <meta name="theme-color" content="#8b5cf6"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="DE Hub"/>
+  <link rel="manifest" href="manifest.json"/>
+  <noscript><style>body{display:flex;align-items:center;justify-content:center;min-height:100vh;background:#0f0f13;color:#fff;font-family:sans-serif;text-align:center;padding:20px}</style><p>This app requires JavaScript to run.</p></noscript>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link rel="stylesheet" href="css/main.css"/>
@@ -131,6 +137,15 @@
           </div>
         </div>
         <div id="streak-badge" class="streak-badge" style="display:none"></div>
+      </div>
+
+      <!-- Progress export/import -->
+      <div class="progress-io-row">
+        <button class="progress-io-btn" id="export-progress-btn">⬇️ Export Progress</button>
+        <label class="progress-io-btn" id="import-progress-label">
+          ⬆️ Import Progress
+          <input type="file" id="import-progress-input" accept=".json" style="display:none"/>
+        </label>
       </div>
 
       <!-- Daily Recommendation -->

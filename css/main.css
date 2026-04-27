@@ -3540,3 +3540,24 @@ pre[class*="language-"], code[class*="language-"] {
   box-shadow: 0 8px 32px rgba(139,92,246,0.4);
 }
 .milestone-toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ===================================================
+   PROGRESS EXPORT / IMPORT
+   =================================================== */
+.progress-io-row {
+  display: flex;
+  gap: 10px;
+  margin: 8px 0 16px;
+  flex-wrap: wrap;
+}
+.progress-io-btn {
+  padding: 8px 18px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.progress-io-btn:hover { border-color: var(--purple-light); color: var(--purple-light); }

@@ -36,6 +36,7 @@ function navigate(sectionId) {
   const navEl = document.querySelector(`[data-nav="${sectionId}"]`);
   if (navEl) navEl.classList.add('active');
   window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (location.hash !== '#' + sectionId) history.pushState(null, '', '#' + sectionId);
 
   if (!BUILT_SECTIONS.has(sectionId)) {
     BUILT_SECTIONS.add(sectionId);
@@ -1814,7 +1815,16 @@ document.addEventListener('DOMContentLoaded', ()=>{
     if (e.key==='Escape') closeSearch();
   });
 
-  navigate('home');
+  // Hash-based routing — respect URL on load and back/forward
+  const VALID_SECTIONS = ['home','roadmap','bot','sql-fundamentals','python-de','setup-guides',
+    'knowledge','corrections','gaps','connections','interview','flashcards',
+    'interview-questions','snippets','projects'];
+  const initialSection = VALID_SECTIONS.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'home';
+  navigate(initialSection);
+  window.addEventListener('hashchange', () => {
+    const sec = VALID_SECTIONS.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'home';
+    navigate(sec);
+  });
 
   // ---- ONBOARDING ----
   if (!localStorage.getItem('mk_onboarded')) {
@@ -1850,6 +1860,37 @@ document.addEventListener('DOMContentLoaded', ()=>{
       overlay.addEventListener('click', e => { if (e.target === overlay) closeOnboarding(); });
     }
   }
+
+  // ---- PROGRESS EXPORT / IMPORT ----
+  document.getElementById('export-progress-btn')?.addEventListener('click', () => {
+    const data = {};
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k.startsWith('mk_')) data[k] = localStorage.getItem(k);
+    }
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'de-hub-progress.json'; a.click();
+    URL.revokeObjectURL(url);
+    showToast('Progress exported!');
+  });
+
+  document.getElementById('import-progress-input')?.addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        Object.entries(data).forEach(([k, v]) => { if (k.startsWith('mk_')) localStorage.setItem(k, v); });
+        showToast('Progress imported! Reloading...');
+        setTimeout(() => location.reload(), 1200);
+      } catch { showToast('Invalid file — import failed.'); }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  });
 
   // ---- MOBILE SIDEBAR TOGGLE ----
   const menuBtn     = document.getElementById('mobile-menu-btn');
