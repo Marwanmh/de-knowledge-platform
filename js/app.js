@@ -645,9 +645,83 @@ function buildConnections() {
 }
 
 // ---- INTERVIEW READINESS ----
+
+// Map topic/gap IDs → category index (matches INTERVIEW_READINESS.categories order)
+const CATEGORY_TOPIC_MAP = [
+  // 0: Data Warehouse Concepts
+  ['oltp-olap','dw-lake-lakehouse','fact-dimension','normalization','acid-transactions'],
+  // 1: Dimensional Modeling
+  ['star-snowflake','fact-dimension','scd-types','merge-upsert'],
+  // 2: Pipeline Design
+  ['pipeline-phases','incremental-loading','etl-elt','idempotency','medallion-arch','delta-iceberg','parquet-format'],
+  // 3: Apache Airflow
+  ['airflow','dag-linearity','airflow-scheduling'],
+  // 4: Apache Spark
+  ['spark-architecture','spark-rdd-partitions','spark-shuffle','spark-cache-persist','spark-lazy-eval','wide-narrow-transforms','data-skew'],
+  // 5: SQL (Intermediate+)
+  ['sql-joins','advanced-sql','storage-partitioning'],
+  // 6: Cloud Platforms
+  ['cloud-platforms'],
+  // 7: dbt
+  ['dbt-tool'],
+  // 8: Streaming / Real-time
+  ['streaming-kafka'],
+  // 9: Data Quality & Testing
+  ['data-quality','docker-de'],
+];
+
+function computeLiveCategories() {
+  return INTERVIEW_READINESS.categories.map((cat, i) => {
+    const ids = CATEGORY_TOPIC_MAP[i] || [];
+    const ratings = ids.map(id => getConfidence(id)).filter(r => r > 0);
+    let score = cat.score;
+    if (ratings.length > 0) {
+      const avgStar = ratings.reduce((a,b)=>a+b,0) / ratings.length; // 1-5
+      const ratedPct = avgStar / 5 * 100;
+      const coverage = ratings.length / ids.length; // how many of the topics rated
+      // blend: base 40% + live ratings 60% (weighted by coverage)
+      score = Math.round(cat.score * (1 - coverage * 0.6) + ratedPct * (coverage * 0.6));
+      score = Math.max(0, Math.min(100, score));
+    }
+    let status = cat.status;
+    if (score >= 80) status = 'strong';
+    else if (score >= 65) status = 'good';
+    else if (score >= 45) status = 'decent';
+    else if (score >= 25) status = 'gap';
+    else status = score < 20 ? 'critical-gap' : 'needs-work';
+    return { ...cat, score, status };
+  });
+}
+
+function computeLiveWeakPoints() {
+  // Build a scored list of all topics — lower confidence = higher priority
+  const allTopics = KNOWLEDGE.map(k => {
+    const conf = getConfidence(k.id);
+    return { id: k.id, title: k.title, conf, isGap: false };
+  });
+  GAPS.forEach(g => {
+    const conf = getConfidence(g.id);
+    allTopics.push({ id: g.id, title: g.title, conf, isGap: true });
+  });
+  // Sort: unrated (0) first, then by ascending confidence
+  const weakest = allTopics
+    .filter(t => t.conf < 3) // below "comfortable"
+    .sort((a,b) => a.conf - b.conf || a.title.localeCompare(b.title))
+    .slice(0, 5);
+  if (weakest.length === 0) return INTERVIEW_READINESS.weakPoints; // fallback
+  return weakest.map((t, i) => {
+    const orig = INTERVIEW_READINESS.weakPoints.find(w => w.topic.toLowerCase().includes(t.title.toLowerCase().split(' ')[0]));
+    const detail = orig ? orig.detail : `Rated ${t.conf}/5 — needs more practice before interviews.`;
+    const impact = t.conf === 0 ? 'High' : t.conf < 2 ? 'Medium-High' : 'Medium';
+    return { rank: i+1, topic: t.title, impact, detail };
+  });
+}
+
 function buildReadiness() {
   const r    = INTERVIEW_READINESS;
   const circ = 2 * Math.PI * 65;
+  const cats = computeLiveCategories();
+  const wps  = computeLiveWeakPoints();
   document.getElementById('readiness-content').innerHTML = `
     <div id="score-breakdown-panel"></div>
     <div class="readiness-overview">
@@ -679,8 +753,8 @@ function buildReadiness() {
       </div>
     </div>
     <div class="readiness-categories">
-      <h3>Knowledge Breakdown</h3>
-      ${r.categories.map(cat=>`
+      <h3>Knowledge Breakdown <span style="font-size:12px;font-weight:400;color:var(--text-muted)">(updates with your star ratings)</span></h3>
+      ${cats.map(cat=>`
         <div class="category-row" title="${cat.note}">
           <div class="category-name">${cat.name}</div>
           <div class="category-bar">
@@ -692,8 +766,8 @@ function buildReadiness() {
     </div>
     <div class="divider"></div>
     <div class="weak-points">
-      <h3>Priority Improvements</h3>
-      ${r.weakPoints.map(wp=>`
+      <h3>Priority Improvements <span style="font-size:12px;font-weight:400;color:var(--text-muted)">(based on your ratings)</span></h3>
+      ${wps.map(wp=>`
         <div class="weak-point-card">
           <div class="weak-point-rank">${wp.rank}</div>
           <div>
@@ -744,6 +818,34 @@ function updateReadinessPanel() {
 
   const gaugeNum = document.getElementById('gauge-number');
   if (gaugeNum) gaugeNum.textContent = score;
+
+  // Refresh live category bars
+  const cats = computeLiveCategories();
+  const catRows = document.querySelectorAll('.category-row');
+  if (catRows.length === cats.length) {
+    catRows.forEach((row, i) => {
+      const cat = cats[i];
+      const fill = row.querySelector('.category-bar-fill');
+      const scoreEl = row.querySelector('.category-score');
+      if (fill) { fill.className = `category-bar-fill bar-${cat.status}`; fill.style.width = cat.score + '%'; }
+      if (scoreEl) { scoreEl.className = `category-score score-${cat.status}`; scoreEl.textContent = cat.score + '%'; }
+    });
+  }
+
+  // Refresh weak points
+  const wps = computeLiveWeakPoints();
+  const wpContainer = document.querySelector('.weak-points');
+  if (wpContainer) {
+    const h3 = wpContainer.querySelector('h3');
+    wpContainer.innerHTML = '';
+    if (h3) wpContainer.appendChild(h3);
+    wps.forEach(wp => {
+      const div = document.createElement('div');
+      div.className = 'weak-point-card';
+      div.innerHTML = `<div class="weak-point-rank">${wp.rank}</div><div><div class="weak-point-topic">${wp.topic}</div><div class="weak-point-detail">${wp.detail}</div></div><span class="impact-badge impact-${wp.impact.replace(/ /g,'-')}">${wp.impact}</span>`;
+      wpContainer.appendChild(div);
+    });
+  }
 }
 
 function animateReadiness() {
