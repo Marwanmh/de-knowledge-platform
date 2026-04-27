@@ -198,6 +198,7 @@ function buildHeroStats() {
 
 function updateHeroScore() {
   const studied = GAPS.filter(g=>isGapStudied(g.id)).length;
+  const prev    = parseInt(localStorage.getItem('mk_last_score') || '0');
   const score   = calcDynamicScore();
   const sEl = document.getElementById('stat-score');
   const tEl = document.getElementById('stat-topics');
@@ -207,6 +208,31 @@ function updateHeroScore() {
   if (gEl) { gEl.dataset.suffix=''; animateCounter(gEl, GAPS.length - studied, 300); }
   if (document.getElementById('score-breakdown-panel')) updateReadinessPanel();
   updateSidebarScore();
+  checkScoreMilestone(prev, score);
+  localStorage.setItem('mk_last_score', score);
+}
+
+function checkScoreMilestone(prev, current) {
+  const milestones = [
+    { threshold: 80, key: 'mk_mile_80', msg: '🎉 Score hit 80! Solid junior-ready foundation!' },
+    { threshold: 90, key: 'mk_mile_90', msg: '🚀 Score hit 90! Interview-ready for most roles!' },
+    { threshold: 100, key: 'mk_mile_100', msg: '🏆 Perfect Score! You\'ve mastered the platform!' },
+  ];
+  milestones.forEach(m => {
+    if (prev < m.threshold && current >= m.threshold && !localStorage.getItem(m.key)) {
+      localStorage.setItem(m.key, '1');
+      showMilestoneToast(m.msg);
+    }
+  });
+}
+
+function showMilestoneToast(msg) {
+  const el = document.createElement('div');
+  el.className = 'milestone-toast';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('visible'));
+  setTimeout(() => { el.classList.remove('visible'); setTimeout(() => el.remove(), 500); }, 4000);
 }
 
 // ---- DAILY RECOMMENDATION ----
@@ -1789,6 +1815,41 @@ document.addEventListener('DOMContentLoaded', ()=>{
   });
 
   navigate('home');
+
+  // ---- ONBOARDING ----
+  if (!localStorage.getItem('mk_onboarded')) {
+    const overlay = document.getElementById('onboarding-overlay');
+    const slides  = document.querySelectorAll('.onboarding-slide');
+    const dots    = document.querySelectorAll('.onboarding-dot');
+    const prevBtn = document.getElementById('onboarding-prev');
+    const nextBtn = document.getElementById('onboarding-next');
+    let cur = 0;
+
+    function goSlide(n) {
+      slides[cur].classList.remove('active');
+      dots[cur].classList.remove('active');
+      cur = n;
+      slides[cur].classList.add('active');
+      dots[cur].classList.add('active');
+      prevBtn.style.visibility = cur === 0 ? 'hidden' : 'visible';
+      nextBtn.textContent = cur === slides.length - 1 ? 'Get Started!' : 'Next →';
+    }
+
+    function closeOnboarding() {
+      overlay.classList.remove('visible');
+      localStorage.setItem('mk_onboarded', '1');
+    }
+
+    if (overlay) {
+      overlay.classList.add('visible');
+      prevBtn?.addEventListener('click', () => { if (cur > 0) goSlide(cur - 1); });
+      nextBtn?.addEventListener('click', () => {
+        if (cur < slides.length - 1) goSlide(cur + 1);
+        else closeOnboarding();
+      });
+      overlay.addEventListener('click', e => { if (e.target === overlay) closeOnboarding(); });
+    }
+  }
 
   // ---- MOBILE SIDEBAR TOGGLE ----
   const menuBtn     = document.getElementById('mobile-menu-btn');

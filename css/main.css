@@ -3459,3 +3459,84 @@ pre[class*="language-"], code[class*="language-"] {
 }
 /* Bot code: keep its own styling, Prism not applied there */
 .bot-code code { background: transparent !important; }
+
+/* ===================================================
+   ONBOARDING OVERLAY
+   =================================================== */
+.onboarding-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+.onboarding-overlay.visible { opacity: 1; pointer-events: all; }
+.onboarding-modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 40px 36px 32px;
+  max-width: 420px;
+  width: 90%;
+  text-align: center;
+}
+.onboarding-slide { display: none; }
+.onboarding-slide.active { display: block; }
+.onboarding-emoji { font-size: 52px; margin-bottom: 16px; }
+.onboarding-modal h2 { font-size: 22px; font-weight: 700; color: var(--text); margin-bottom: 12px; }
+.onboarding-modal p { font-size: 15px; color: var(--text-secondary); line-height: 1.65; }
+.onboarding-dots { display: flex; justify-content: center; gap: 8px; margin: 24px 0 20px; }
+.onboarding-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); transition: background 0.2s; }
+.onboarding-dot.active { background: var(--purple-light); }
+.onboarding-actions { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.onboarding-btn-primary {
+  flex: 1;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, var(--purple), var(--cyan));
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.onboarding-btn-primary:hover { opacity: 0.88; }
+.onboarding-btn-secondary {
+  padding: 12px 20px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.onboarding-btn-secondary:hover { border-color: var(--purple-light); }
+
+/* ===================================================
+   MILESTONE TOAST
+   =================================================== */
+.milestone-toast {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: linear-gradient(135deg, var(--purple), var(--cyan));
+  color: #fff;
+  padding: 14px 28px;
+  border-radius: 50px;
+  font-size: 15px;
+  font-weight: 600;
+  z-index: 9998;
+  opacity: 0;
+  transition: opacity 0.4s, transform 0.4s;
+  white-space: nowrap;
+  box-shadow: 0 8px 32px rgba(139,92,246,0.4);
+}
+.milestone-toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }

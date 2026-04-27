@@ -366,6 +366,38 @@
 <!-- ===== TOAST ===== -->
 <div class="score-updated-toast" id="score-toast"></div>
 
+<!-- ===== ONBOARDING OVERLAY ===== -->
+<div class="onboarding-overlay" id="onboarding-overlay" role="dialog" aria-modal="true" aria-label="Welcome">
+  <div class="onboarding-modal">
+    <div class="onboarding-slides" id="onboarding-slides">
+      <div class="onboarding-slide active">
+        <div class="onboarding-emoji">👋</div>
+        <h2>Welcome to Your DE Hub</h2>
+        <p>Everything you need to prepare for your Data Engineering career — all offline, all in one place.</p>
+      </div>
+      <div class="onboarding-slide">
+        <div class="onboarding-emoji">📚</div>
+        <h2>Learn & Track Progress</h2>
+        <p>Rate your confidence on every topic with stars. Watch your interview readiness score update in real time as you grow.</p>
+      </div>
+      <div class="onboarding-slide">
+        <div class="onboarding-emoji">🤖</div>
+        <h2>Your Offline DE Expert</h2>
+        <p>Ask the bot anything about SQL, Python, Airflow, Spark, dbt — or quiz yourself. No internet required.</p>
+      </div>
+    </div>
+    <div class="onboarding-dots" id="onboarding-dots">
+      <span class="onboarding-dot active"></span>
+      <span class="onboarding-dot"></span>
+      <span class="onboarding-dot"></span>
+    </div>
+    <div class="onboarding-actions">
+      <button class="onboarding-btn-secondary" id="onboarding-prev" style="visibility:hidden">← Back</button>
+      <button class="onboarding-btn-primary" id="onboarding-next">Next →</button>
+    </div>
+  </div>
+</div>
+
 <script src="js/data.js" defer></script>
 <script src="js/data-extra.js" defer></script>
 <script src="js/data-roadmap.js" defer></script>
